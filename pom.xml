@@ -42,8 +42,8 @@
 	</developers>
 
 	<properties>
-		<project.source.version>1.7</project.source.version>
-		<project.target.version>1.7</project.target.version>
+		<project.source.version>1.8</project.source.version>
+		<project.target.version>1.8</project.target.version>
 		<project.encoding>UTF-8</project.encoding>
 
 		<slf4j.version>1.7.25</slf4j.version>

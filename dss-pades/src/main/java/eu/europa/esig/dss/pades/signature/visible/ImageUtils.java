@@ -35,8 +35,8 @@ import org.w3c.dom.NodeList;
 import eu.europa.esig.dss.DSSDocument;
 import eu.europa.esig.dss.DSSException;
 import eu.europa.esig.dss.MimeType;
-import eu.europa.esig.dss.pades.SignatureImageParameters;
-import eu.europa.esig.dss.pades.SignatureImageTextParameters;
+import eu.europa.esig.dss.SignatureImageParameters;
+import eu.europa.esig.dss.SignatureImageTextParameters;
 import eu.europa.esig.dss.utils.Utils;
 
 /**

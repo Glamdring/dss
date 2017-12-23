@@ -9,11 +9,11 @@ import org.junit.Before;
 import eu.europa.esig.dss.DSSDocument;
 import eu.europa.esig.dss.FileDocument;
 import eu.europa.esig.dss.MimeType;
+import eu.europa.esig.dss.SignatureImageParameters;
+import eu.europa.esig.dss.SignatureImageTextParameters;
 import eu.europa.esig.dss.SignatureLevel;
+import eu.europa.esig.dss.SignatureImageTextParameters.SignerPosition;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
-import eu.europa.esig.dss.pades.SignatureImageParameters;
-import eu.europa.esig.dss.pades.SignatureImageTextParameters;
-import eu.europa.esig.dss.pades.SignatureImageTextParameters.SignerPosition;
 import eu.europa.esig.dss.signature.DocumentSignatureService;
 
 public class PAdESWithSignatureVisibleAndTimestampInvisibleTest extends AbstractPAdESTestSignature {

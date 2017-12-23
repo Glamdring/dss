@@ -56,6 +56,7 @@ public class AbstractRemoteSignatureServiceImpl {
 				break;
 			case PAdES:
 				PAdESSignatureParameters padesParams = new PAdESSignatureParameters();
+				padesParams.setSignatureImageParameters(remoteParameters.getSignatureImageParameters());
 				padesParams.setSignatureSize(9472 * 2); // double reserved space for signature
 				parameters = padesParams;
 				break;

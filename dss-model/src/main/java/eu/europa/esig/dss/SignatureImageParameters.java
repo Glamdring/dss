@@ -18,11 +18,9 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
-package eu.europa.esig.dss.pades;
+package eu.europa.esig.dss;
 
 import java.awt.Color;
-
-import eu.europa.esig.dss.DSSDocument;
 
 /**
  * Parameters for a visible signature creation
@@ -82,7 +80,7 @@ public class SignatureImageParameters {
 		/**
 		 * y axis is the botton padding
 		 */
-		BOTTON;
+		BOTTOM;
 	}
 
 	/**
@@ -112,17 +110,31 @@ public class SignatureImageParameters {
 		ROTATE_270;
 	}
 
+	public enum VisualSignaturePagePlacement {
+		SINGLE_PAGE, ALL_PAGES, RANGE
+	}
+	
 	/**
 	 * This variable contains the image to use (company logo,...)
 	 */
 	private DSSDocument image;
 
 	/**
+	 * On which pages should the signature be placed
+	 */
+	private VisualSignaturePagePlacement pagePlacement = VisualSignaturePagePlacement.SINGLE_PAGE;
+	
+	/**
 	 * This variable defines the page where the image will appear (1st page by
 	 * default)
 	 */
 	private int page = DEFAULT_PAGE;
 
+	/**
+	 * Alternative to the "page" parameter - specify a page range
+	 */
+	private SignatureImagePageRange pageRange;
+	
 	/**
 	 * This variable defines the position of the image in the PDF page (X axis)
 	 */
@@ -230,7 +242,7 @@ public class SignatureImageParameters {
 		this.page = page;
 	}
         
-            public int getWidth() {
+    public int getWidth() {
         return width;
     }
 
@@ -301,5 +313,21 @@ public class SignatureImageParameters {
 
 	public void setAlignmentVertical(VisualSignatureAlignmentVertical alignmentVertical) {
 		this.alignmentVertical = alignmentVertical;
+	}
+
+	public VisualSignaturePagePlacement getPagePlacement() {
+		return pagePlacement;
+	}
+
+	public void setPagePlacement(VisualSignaturePagePlacement pagePlacement) {
+		this.pagePlacement = pagePlacement;
+	}
+
+	public SignatureImagePageRange getPageRange() {
+		return pageRange;
+	}
+
+	public void setPageRange(SignatureImagePageRange pageRange) {
+		this.pageRange = pageRange;
 	}
 }

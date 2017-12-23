@@ -39,6 +39,8 @@ public class RemoteSignatureParameters extends AbstractSerializableSignaturePara
 	 */
 	private ASiCContainerType asicContainerType;
 
+	private SignatureImageParameters signatureImageParameters;
+	
 	public RemoteSignatureParameters() {
 	}
 
@@ -74,4 +76,11 @@ public class RemoteSignatureParameters extends AbstractSerializableSignaturePara
 		this.asicContainerType = asicContainerType;
 	}
 
+	public SignatureImageParameters getSignatureImageParameters() {
+		return signatureImageParameters;
+	}
+
+	public void setSignatureImageParameters(SignatureImageParameters signatureImageParameters) {
+		this.signatureImageParameters = signatureImageParameters;
+	}
 }

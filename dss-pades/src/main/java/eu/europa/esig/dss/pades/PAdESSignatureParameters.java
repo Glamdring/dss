@@ -1,6 +1,7 @@
 package eu.europa.esig.dss.pades;
 
 import eu.europa.esig.dss.SignatureForm;
+import eu.europa.esig.dss.SignatureImageParameters;
 import eu.europa.esig.dss.SignatureLevel;
 import eu.europa.esig.dss.cades.CAdESSignatureParameters;
 

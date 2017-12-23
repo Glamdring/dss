@@ -65,9 +65,11 @@ import eu.europa.esig.dss.DSSUtils;
 import eu.europa.esig.dss.DigestAlgorithm;
 import eu.europa.esig.dss.InMemoryDocument;
 import eu.europa.esig.dss.MimeType;
+import eu.europa.esig.dss.SignatureImagePageRange;
+import eu.europa.esig.dss.SignatureImageParameters;
+import eu.europa.esig.dss.SignatureImageParameters.VisualSignaturePagePlacement;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.pades.SignatureFieldParameters;
-import eu.europa.esig.dss.pades.SignatureImageParameters;
 import eu.europa.esig.dss.pades.signature.visible.ImageAndResolution;
 import eu.europa.esig.dss.pades.signature.visible.ImageUtils;
 import eu.europa.esig.dss.pdf.DSSDictionaryCallback;
@@ -128,7 +130,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 	private byte[] signDocumentAndReturnDigest(final PAdESSignatureParameters parameters, final byte[] signatureBytes, final OutputStream fileOutputStream,
 			final PDDocument pdDocument, final PDSignature pdSignature, final DigestAlgorithm digestAlgorithm) throws DSSException {
 
-		SignatureOptions options = new SignatureOptions();
+		List<SignatureOptions> optionsList = new ArrayList<>();
 		try {
 
 			final MessageDigest digest = DSSUtils.getMessageDigest(digestAlgorithm);
@@ -147,10 +149,19 @@ class PdfBoxSignatureService implements PDFSignatureService {
 				}
 			};
 
-			options.setPreferredSignatureSize(parameters.getSignatureSize());
-			fillImageParameters(pdDocument, parameters, options);
-			pdDocument.addSignature(pdSignature, signatureInterface, options);
-
+			int totalPages = pdDocument.getNumberOfPages();
+			for (int page = 0; page < totalPages; page++) {
+				SignatureOptions options = new SignatureOptions();
+				optionsList.add(options);
+				if (parameters.getSignatureImageParameters() != null 
+						&& placeSignatureOnPage(page, totalPages, parameters.getSignatureImageParameters())) {
+					options.setPage(page);
+					fillImageParameters(pdDocument, parameters, options);
+				}
+				options.setPreferredSignatureSize(parameters.getSignatureSize());
+				pdDocument.addSignature(pdSignature, signatureInterface, options);	
+			}
+			
 			saveDocumentIncrementally(parameters, fileOutputStream, pdDocument);
 			final byte[] digestValue = digest.digest();
 			if (LOG.isDebugEnabled()) {
@@ -160,8 +171,29 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		} catch (IOException e) {
 			throw new DSSException(e);
 		} finally {
-			Utils.closeQuietly(options.getVisualSignature());
+			optionsList.forEach(options -> Utils.closeQuietly(options.getVisualSignature()));
 		}
+	}
+
+	private boolean placeSignatureOnPage(int page, int total, SignatureImageParameters signatureImageParameters) {
+		if (signatureImageParameters.getPagePlacement() == VisualSignaturePagePlacement.SINGLE_PAGE
+				&& page == signatureImageParameters.getPage() - 1) {
+			return true;
+		} else if (signatureImageParameters.getPagePlacement() == VisualSignaturePagePlacement.ALL_PAGES) {
+			return true;
+		} else if (signatureImageParameters.getPagePlacement() == VisualSignaturePagePlacement.RANGE) {
+			SignatureImagePageRange range = signatureImageParameters.getPageRange();
+			if (range.getPages().isEmpty() || range.getPages().contains(page)) {
+				// 3 - 1 = 2, 0,1,2 2 > 1
+				if (range.isExcludeLast() && total - range.getExcludeLastCount() < page + 1) {
+					return false;
+				} else if (range.isExcludeFirst() && range.getExcludeFirstCount() <= page + 1) {
+					return false;
+				}
+				return true;
+			}
+		}
+		return false;
 	}
 
 	protected void fillImageParameters(final PDDocument doc, final PAdESSignatureParameters signatureParameters, SignatureOptions options) throws IOException {
@@ -175,10 +207,10 @@ class PdfBoxSignatureService implements PDFSignatureService {
 			// DSS-747. Using the DPI resolution to convert java size to dot
 			ImageAndResolution ires = ImageUtils.create(signatureImageParameters);
 
-			SignatureImageAndPosition signatureImageAndPosition = SignatureImageAndPositionProcessor.process(signatureImageParameters, doc, ires);
+			SignatureImageAndPosition signatureImageAndPosition = SignatureImageAndPositionProcessor.process(signatureImageParameters, doc, ires, options.getPage());
 
 			PDVisibleSignDesigner visibleSig = new PDVisibleSignDesigner(doc, new ByteArrayInputStream(signatureImageAndPosition.getSignatureImage()),
-					signatureImageParameters.getPage());
+					options.getPage() + 1);
 
 			visibleSig.xAxis(signatureImageAndPosition.getX());
 			visibleSig.yAxis(signatureImageAndPosition.getY());
@@ -196,7 +228,6 @@ class PdfBoxSignatureService implements PDFSignatureService {
 			signatureProperties.visualSignEnabled(true).setPdVisibleSignature(visibleSig).buildSignature();
 
 			options.setVisualSignature(signatureProperties);
-			options.setPage(signatureImageParameters.getPage() - 1); // DSS-1138
 		}
 	}
 

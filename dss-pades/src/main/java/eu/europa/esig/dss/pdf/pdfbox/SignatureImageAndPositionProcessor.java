@@ -1,6 +1,6 @@
 package eu.europa.esig.dss.pdf.pdfbox;
 
-import eu.europa.esig.dss.pades.SignatureImageParameters;
+import eu.europa.esig.dss.SignatureImageParameters;
 import eu.europa.esig.dss.pades.signature.visible.ImageAndResolution;
 import eu.europa.esig.dss.pades.signature.visible.ImageUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -23,9 +23,9 @@ public class SignatureImageAndPositionProcessor {
     private static final String SUPPORTED_VERTICAL_ALIGNMENT_ERROR_MESSAGE = "not supported vertical alignment: ";
     private static final String SUPPORTED_HORIZONTAL_ALIGNMENT_ERROR_MESSAGE = "not supported horizontal alignment: ";
 
-    public static SignatureImageAndPosition process(final SignatureImageParameters signatureImageParameters, final PDDocument doc, final ImageAndResolution ires) throws IOException {
+    public static SignatureImageAndPosition process(final SignatureImageParameters signatureImageParameters, final PDDocument doc, final ImageAndResolution ires, int page) throws IOException {
         BufferedImage visualImageSignature = ImageIO.read(ires.getInputStream());
-        PDPage pdPage = doc.getPages().get(signatureImageParameters.getPage() - 1);
+        PDPage pdPage = doc.getPages().get(page);
 
         int rotate = getRotation(signatureImageParameters.getRotation(), pdPage);
         if(rotate != ANGLE_360) {
@@ -108,7 +108,7 @@ public class SignatureImageAndPositionProcessor {
             case MIDDLE:
                 x = (mediaBox.getWidth() - ires.toXPoint(visualImageSignature.getWidth())) / 2;
                 break;
-            case BOTTON:
+            case BOTTOM:
                 x = signatureImageParameters.getyAxis();
                 break;
             default:
@@ -154,7 +154,7 @@ public class SignatureImageAndPositionProcessor {
             case MIDDLE:
                 x = (mediaBox.getWidth() - ires.toXPoint(visualImageSignature.getWidth())) / 2;
                 break;
-            case BOTTON:
+            case BOTTOM:
                 x = mediaBox.getWidth() - ires.toXPoint(visualImageSignature.getWidth()) - signatureImageParameters.getyAxis();
                 break;
             default:
@@ -223,7 +223,7 @@ public class SignatureImageAndPositionProcessor {
             case MIDDLE:
                 y = (mediaBox.getHeight() - ires.toYPoint(visualImageSignature.getHeight())) / 2;
                 break;
-            case BOTTON:
+            case BOTTOM:
                 y = signatureImageParameters.getyAxis();
                 break;
             default:
@@ -269,7 +269,7 @@ public class SignatureImageAndPositionProcessor {
             case MIDDLE:
                 y = (mediaBox.getHeight() - ires.toYPoint(visualImageSignature.getHeight())) / 2;
                 break;
-            case BOTTON:
+            case BOTTOM:
                 y = mediaBox.getHeight() - ires.toYPoint(visualImageSignature.getHeight()) - signatureImageParameters.getyAxis();
                 break;
             default:
