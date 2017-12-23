@@ -184,7 +184,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		} else if (signatureImageParameters.getPagePlacement() == VisualSignaturePagePlacement.RANGE) {
 			SignatureImagePageRange range = signatureImageParameters.getPageRange();
 			if (range.getPages().isEmpty() || range.getPages().contains(page)) {
-				// 3 - 1 = 2, 0,1,2 2 > 1
+				
 				if (range.isExcludeLast() && total - range.getExcludeLastCount() < page + 1) {
 					return false;
 				} else if (range.isExcludeFirst() && range.getExcludeFirstCount() <= page + 1) {

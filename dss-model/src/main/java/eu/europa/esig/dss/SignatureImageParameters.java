@@ -22,6 +22,8 @@ package eu.europa.esig.dss;
 
 import java.awt.Color;
 
+import javax.xml.bind.annotation.XmlTransient;
+
 /**
  * Parameters for a visible signature creation
  *
@@ -118,6 +120,8 @@ public class SignatureImageParameters {
 	 * This variable contains the image to use (company logo,...)
 	 */
 	private DSSDocument image;
+	
+	private RemoteDocument imageDocument;
 
 	/**
 	 * On which pages should the signature be placed
@@ -202,6 +206,7 @@ public class SignatureImageParameters {
 	 */
 	private SignatureImageTextParameters textParameters;
 
+	@XmlTransient
 	public DSSDocument getImage() {
 		return image;
 	}
@@ -329,5 +334,13 @@ public class SignatureImageParameters {
 
 	public void setPageRange(SignatureImagePageRange pageRange) {
 		this.pageRange = pageRange;
+	}
+
+	public RemoteDocument getImageDocument() {
+		return imageDocument;
+	}
+
+	public void setImageDocument(RemoteDocument imageDocument) {
+		this.imageDocument = imageDocument;
 	}
 }

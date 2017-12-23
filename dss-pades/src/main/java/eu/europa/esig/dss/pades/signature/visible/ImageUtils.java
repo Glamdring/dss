@@ -34,6 +34,7 @@ import org.w3c.dom.NodeList;
 
 import eu.europa.esig.dss.DSSDocument;
 import eu.europa.esig.dss.DSSException;
+import eu.europa.esig.dss.InMemoryDocument;
 import eu.europa.esig.dss.MimeType;
 import eu.europa.esig.dss.SignatureImageParameters;
 import eu.europa.esig.dss.SignatureImageTextParameters;
@@ -66,8 +67,15 @@ public class ImageUtils {
 	public static ImageAndResolution create(final SignatureImageParameters imageParameters) throws IOException {
 		SignatureImageTextParameters textParamaters = imageParameters.getTextParameters();
 
+		// the image can be specified either as a DSSDocument or as RemoteDocument. In the latter case, we convert it
 		DSSDocument image = imageParameters.getImage();
-		if ((textParamaters != null) && Utils.isStringNotEmpty(textParamaters.getText())) {
+		if (image == null && imageParameters.getImageDocument() != null) {
+			image = new InMemoryDocument(imageParameters.getImageDocument().getBytes(), 
+					imageParameters.getImageDocument().getName(), 
+					imageParameters.getImageDocument().getMimeType());
+		}
+		
+		if (textParamaters != null && Utils.isStringNotEmpty(textParamaters.getText())) {
 			BufferedImage buffImg = ImageTextWriter.createTextImage(textParamaters.getText(), textParamaters.getFont(), textParamaters.getTextColor(),
 					textParamaters.getBackgroundColor(), getDpi(imageParameters.getDpi()), textParamaters.getSignerTextHorizontalAlignment());
 
