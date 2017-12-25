@@ -1,9 +1,11 @@
 package eu.europa.esig.dss.pades;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.assertThat;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
@@ -26,16 +28,13 @@ import eu.europa.esig.dss.pades.signature.PAdESService;
 import eu.europa.esig.dss.signature.PKIFactoryAccess;
 import eu.europa.esig.dss.validation.CommonCertificateVerifier;
 
-import static org.junit.Assert.*;
-import static org.hamcrest.CoreMatchers.*;
-
-public class VisibleSignatureTest extends PKIFactoryAccess {
+public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 
 	@Test
 	public void visibleSignatureAndStampTest() throws FileNotFoundException, IOException {
-		byte[] pdfBytes = IOUtils.toByteArray(VisibleSignatureTest.class.getResourceAsStream("/multi_page.pdf"));
+		byte[] pdfBytes = IOUtils.toByteArray(PAdESVisibleSignatureAndStampTest.class.getResourceAsStream("/multi_page.pdf"));
 		DSSDocument document = new InMemoryDocument(new ByteArrayInputStream(pdfBytes));
-		byte[] imageBytes = IOUtils.toByteArray(VisibleSignatureTest.class.getResourceAsStream("/small-red.jpg"));
+		byte[] imageBytes = IOUtils.toByteArray(PAdESVisibleSignatureAndStampTest.class.getResourceAsStream("/small-red.jpg"));
 		DSSDocument image = new InMemoryDocument(new ByteArrayInputStream(imageBytes));
 
 		PAdESSignatureParameters params = new PAdESSignatureParameters();
@@ -49,7 +48,7 @@ public class VisibleSignatureTest extends PKIFactoryAccess {
 		params.getSignatureImageParameters().setWidth(100);
 		params.getSignatureImageParameters().setHeight(30);
 		params.getSignatureImageParameters().setPagePlacement(VisualSignaturePagePlacement.SINGLE_PAGE);
-		params.getSignatureImageParameters().setPage(2);
+		params.getSignatureImageParameters().setPage(3);
 		
 		params.setStampImageParameters(new SignatureImageParameters());
 		params.getStampImageParameters().setImage(image);
@@ -61,7 +60,7 @@ public class VisibleSignatureTest extends PKIFactoryAccess {
 		params.getStampImageParameters().setWidth(100);
 		params.getStampImageParameters().setHeight(30);
 		params.getStampImageParameters().setPagePlacement(VisualSignaturePagePlacement.RANGE);
-		params.getStampImageParameters().getPageRange().setPages(Arrays.asList(0, 1));
+		params.getStampImageParameters().getPageRange().setPages(Arrays.asList(1, 2));
 		
 		params.bLevel().setSigningDate(new Date());
 		params.setSigningCertificate(getSigningCert());
@@ -82,6 +81,9 @@ public class VisibleSignatureTest extends PKIFactoryAccess {
 		
 		assertThat(result.getNumberOfPages(), equalTo(3));
 		assertThat(result.getPage(0).getAnnotations().size(), equalTo(3));
+		assertThat(result.getPage(1).getAnnotations().size(), equalTo(3));
+		assertThat(result.getPage(2).getAnnotations().size(), equalTo(1));
+		// commented-out piece for manual testing
 //		try (FileOutputStream fos = new FileOutputStream("c:\\tmp\\out.pdf")) {
 //			IOUtils.copy(signedDocument.openStream(), fos);
 //		}
