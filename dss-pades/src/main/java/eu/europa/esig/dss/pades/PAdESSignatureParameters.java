@@ -33,6 +33,11 @@ public class PAdESSignatureParameters extends CAdESSignatureParameters {
 	 * This attribute is used to create visible signature in PAdES form
 	 */
 	private SignatureImageParameters signatureImageParameters;
+	
+	/**
+	 * This attribute is used to create visible stamps in PAdES form
+	 */
+	private SignatureImageParameters stampImageParameters;
 
 	/**
 	 * This attribute allows to override the used Filter for a Timestamp.
@@ -168,4 +173,11 @@ public class PAdESSignatureParameters extends CAdESSignatureParameters {
 		this.signatureSize = signatureSize;
 	}
 
+	public SignatureImageParameters getStampImageParameters() {
+		return stampImageParameters;
+	}
+
+	public void setStampImageParameters(SignatureImageParameters stampImageParameters) {
+		this.stampImageParameters = stampImageParameters;
+	}
 }
