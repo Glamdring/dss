@@ -257,27 +257,6 @@ class PdfBoxSignatureService implements PDFSignatureService {
 				}
 			};
 
-			// if we already have an AcroForm, we have to manually create a new
-			// SignatureField in order to support multiple visible signature
-			PDAcroForm form = pdDocument.getDocumentCatalog().getAcroForm();
-			if (form != null && parameters.getSignatureImageParameters() != null && !pdDocument.getSignatureDictionaries().isEmpty()) {
-				// try to find existing signature field
-				Optional<PDField> existingFieldOpt = form.getFields().stream().filter(f -> f instanceof PDSignatureField).findFirst();
-				if (existingFieldOpt.isPresent()) {
-					PDSignatureField existingField = (PDSignatureField) existingFieldOpt.get();
-					// create a new field only if the existing one is already signed
-					if (existingField.getSignature() == null || !pdSignature.getCOSObject().equals(existingField.getSignature().getCOSObject())) {
-						PDSignatureField signatureField = new PDSignatureField(form);
-						// append the signature object
-						signatureField.setValue(pdSignature);
-						// backward linking
-						signatureField.getWidgets().get(0).setPage(pdDocument.getPage(parameters.getSignatureImageParameters().getPage() - 1));
-						// change the order of fields because pdDOcument.addSignature always gets the first one
-						form.getFields().add(0, signatureField);
-					}
-				}
-			}
-			
 			options.setPreferredSignatureSize(parameters.getSignatureSize());
 			fillImageParameters(pdDocument, parameters, options);
 			pdDocument.addSignature(pdSignature, signatureInterface, options);

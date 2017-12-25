@@ -39,6 +39,42 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		byte[] imageBytes = IOUtils.toByteArray(PAdESVisibleSignatureAndStampTest.class.getResourceAsStream("/small-red.jpg"));
 		DSSDocument image = new InMemoryDocument(new ByteArrayInputStream(imageBytes));
 
+		DSSDocument signedDocument = signDocumentWithStamps(document, image);
+
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		IOUtils.copy(signedDocument.openStream(), baos);
+		
+		PDDocument result = PDDocument.load(baos.toByteArray());
+		
+		assertThat(result.getNumberOfPages(), equalTo(3));
+		assertThat(result.getPage(0).getAnnotations().size(), equalTo(3));
+		assertThat(result.getPage(1).getAnnotations().size(), equalTo(3));
+		assertThat(result.getPage(2).getAnnotations().size(), equalTo(1));
+		// commented-out piece for manual testing
+//		try (FileOutputStream fos = new FileOutputStream("c:\\tmp\\out.pdf")) {
+//			IOUtils.copy(signedDocument.openStream(), fos);
+//		}
+	}
+
+	@Test
+	public void multipleVisibleSignatureAndStampTest() throws FileNotFoundException, IOException {
+		byte[] pdfBytes = IOUtils.toByteArray(PAdESVisibleSignatureAndStampTest.class.getResourceAsStream("/multi_page.pdf"));
+		DSSDocument document = new InMemoryDocument(new ByteArrayInputStream(pdfBytes));
+		byte[] imageBytes = IOUtils.toByteArray(PAdESVisibleSignatureAndStampTest.class.getResourceAsStream("/small-red.jpg"));
+		DSSDocument image = new InMemoryDocument(new ByteArrayInputStream(imageBytes));
+		
+		DSSDocument signedDocument = signDocumentWithStamps(document, image);
+		DSSDocument twiceSignedDocument = signDocumentWithStamps(signedDocument, image);
+
+		PDDocument twiceSigned = PDDocument.load(twiceSignedDocument.openStream());
+		assertThat(twiceSigned.getSignatureFields().size(), equalTo(2));
+		
+//		try (FileOutputStream fos = new FileOutputStream("c:\\tmp\\out-twice.pdf")) {
+//			IOUtils.copy(twiceSignedDocument.openStream(), fos);
+//		}
+	}
+	
+	private DSSDocument signDocumentWithStamps(DSSDocument document, DSSDocument image) {
 		PAdESSignatureParameters params = new PAdESSignatureParameters();
 		params.setSignatureImageParameters(new SignatureImageParameters());
 		params.getSignatureImageParameters().setImage(image);
@@ -77,22 +113,9 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		ToBeSigned dataToSign = service.getDataToSign(document, params);
 		SignatureValue signatureValue = getToken().sign(dataToSign, params.getDigestAlgorithm(), getPrivateKeyEntry());
 		DSSDocument signedDocument = service.signDocument(document, params, signatureValue);
-
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		IOUtils.copy(signedDocument.openStream(), baos);
-		
-		PDDocument result = PDDocument.load(baos.toByteArray());
-		
-		assertThat(result.getNumberOfPages(), equalTo(3));
-		assertThat(result.getPage(0).getAnnotations().size(), equalTo(3));
-		assertThat(result.getPage(1).getAnnotations().size(), equalTo(3));
-		assertThat(result.getPage(2).getAnnotations().size(), equalTo(1));
-		// commented-out piece for manual testing
-		try (FileOutputStream fos = new FileOutputStream("c:\\tmp\\out.pdf")) {
-			IOUtils.copy(signedDocument.openStream(), fos);
-		}
+		return signedDocument;
 	}
-
+	
 	@Override
 	protected String getSigningAlias() {
 		return GOOD_USER;
