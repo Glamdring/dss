@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.pdfbox.cos.COSArray;
@@ -66,6 +67,7 @@ import org.apache.pdfbox.pdmodel.interactive.digitalsignature.SignatureOptions;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.visible.PDVisibleSigProperties;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.visible.PDVisibleSignDesigner;
 import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
+import org.apache.pdfbox.pdmodel.interactive.form.PDField;
 import org.apache.pdfbox.pdmodel.interactive.form.PDSignatureField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -143,7 +145,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 	private PDDocument loadAndStampDocument(InputStream pdfData, PAdESSignatureParameters parameters)
 			throws IOException {
 		PDDocument pdDocument = PDDocument.load(pdfData);
-		if (parameters.getSignatureImageParameters() != null) {
+		if (parameters.getStampImageParameters() != null) {
 			addStamps(pdDocument, parameters.getStampImageParameters());
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			pdDocument.save(baos);
@@ -258,20 +260,26 @@ class PdfBoxSignatureService implements PDFSignatureService {
 			// if we already have an AcroForm, we have to manually create a new
 			// SignatureField in order to support multiple visible signature
 			PDAcroForm form = pdDocument.getDocumentCatalog().getAcroForm();
-			if (form != null && parameters.getSignatureImageParameters() != null) {
-				 PDSignatureField signatureField = new PDSignatureField(form);
-				 // append the signature object
-				 signatureField.setValue(pdSignature);
-				 // backward linking
-				 signatureField.getWidgets().get(0).setPage(pdDocument.getPage(parameters.getSignatureImageParameters().getPage() - 1));
-				 // change the order of fields because pdDOcument.addSignature always gets the first one
-				 form.getFields().add(0, signatureField);
+			if (form != null && parameters.getSignatureImageParameters() != null && !pdDocument.getSignatureDictionaries().isEmpty()) {
+				// try to find existing signature field
+				Optional<PDField> existingFieldOpt = form.getFields().stream().filter(f -> f instanceof PDSignatureField).findFirst();
+				if (existingFieldOpt.isPresent()) {
+					PDSignatureField existingField = (PDSignatureField) existingFieldOpt.get();
+					// create a new field only if the existing one is already signed
+					if (existingField.getSignature() == null || !pdSignature.getCOSObject().equals(existingField.getSignature().getCOSObject())) {
+						PDSignatureField signatureField = new PDSignatureField(form);
+						// append the signature object
+						signatureField.setValue(pdSignature);
+						// backward linking
+						signatureField.getWidgets().get(0).setPage(pdDocument.getPage(parameters.getSignatureImageParameters().getPage() - 1));
+						// change the order of fields because pdDOcument.addSignature always gets the first one
+						form.getFields().add(0, signatureField);
+					}
+				}
 			}
-			if (parameters.getSignatureImageParameters() != null) {
-				options.setPage(parameters.getSignatureImageParameters().getPage());
-			}
-			fillImageParameters(pdDocument, parameters, options);
+			
 			options.setPreferredSignatureSize(parameters.getSignatureSize());
+			fillImageParameters(pdDocument, parameters, options);
 			pdDocument.addSignature(pdSignature, signatureInterface, options);
 
 			saveDocumentIncrementally(parameters, fileOutputStream, pdDocument);
@@ -324,7 +332,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 					.process(signatureImageParameters, doc, ires);
 
 			PDVisibleSignDesigner visibleSig = new PDVisibleSignDesigner(doc,
-					new ByteArrayInputStream(signatureImageAndPosition.getSignatureImage()), options.getPage());
+					new ByteArrayInputStream(signatureImageAndPosition.getSignatureImage()), signatureImageParameters.getPage());
 
 			visibleSig.xAxis(signatureImageAndPosition.getX());
 			visibleSig.yAxis(signatureImageAndPosition.getY());
@@ -342,6 +350,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 			signatureProperties.visualSignEnabled(true).setPdVisibleSignature(visibleSig).buildSignature();
 
 			options.setVisualSignature(signatureProperties);
+			options.setPage(signatureImageParameters.getPage() - 1); // DSS-1138
 		}
 	}
 
