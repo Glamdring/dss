@@ -1,5 +1,6 @@
 package eu.europa.esig.dss.pades.signature.visible;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -38,6 +39,7 @@ import eu.europa.esig.dss.InMemoryDocument;
 import eu.europa.esig.dss.MimeType;
 import eu.europa.esig.dss.SignatureImageParameters;
 import eu.europa.esig.dss.SignatureImageTextParameters;
+import eu.europa.esig.dss.SignatureImageTextParameters.SignerPosition;
 import eu.europa.esig.dss.utils.Utils;
 
 /**
@@ -65,7 +67,7 @@ public class ImageUtils {
 	}
 
 	public static ImageAndResolution create(final SignatureImageParameters imageParameters) throws IOException {
-		SignatureImageTextParameters textParamaters = imageParameters.getTextParameters();
+		SignatureImageTextParameters textParameters = imageParameters.getTextParameters();
 
 		// the image can be specified either as a DSSDocument or as RemoteDocument. In the latter case, we convert it
 		DSSDocument image = imageParameters.getImage();
@@ -75,27 +77,35 @@ public class ImageUtils {
 					imageParameters.getImageDocument().getMimeType());
 		}
 		
-		if (textParamaters != null && Utils.isStringNotEmpty(textParamaters.getText())) {
-			BufferedImage buffImg = ImageTextWriter.createTextImage(textParamaters.getText(), textParamaters.getFont(), textParamaters.getTextColor(),
-					textParamaters.getBackgroundColor(), getDpi(imageParameters.getDpi()), textParamaters.getSignerTextHorizontalAlignment());
+		if (textParameters != null && Utils.isStringNotEmpty(textParameters.getText())) {
+			Color textBackground = textParameters.getBackgroundColor();
+			if (textParameters.getSignerNamePosition() == SignerPosition.FOREGROUND) {
+				textBackground = new Color(255, 255, 255, 0);
+			}
+			
+			BufferedImage buffImg = ImageTextWriter.createTextImage(textParameters.getText(), textParameters.getFont(), textParameters.getTextColor(),
+					textBackground, getDpi(imageParameters.getDpi()), textParameters.getSignerTextHorizontalAlignment());
 
 			if (image != null) {
 				try (InputStream is = image.openStream()) {
 					if (is != null) {
-						switch (textParamaters.getSignerNamePosition()) {
+						switch (textParameters.getSignerNamePosition()) {
 						case LEFT:
-							buffImg = ImagesMerger.mergeOnRight(ImageIO.read(is), buffImg, textParamaters.getBackgroundColor(),
+							buffImg = ImagesMerger.mergeOnRight(ImageIO.read(is), buffImg, textParameters.getBackgroundColor(),
 									imageParameters.getSignerTextImageVerticalAlignment());
 							break;
 						case RIGHT:
-							buffImg = ImagesMerger.mergeOnRight(buffImg, ImageIO.read(is), textParamaters.getBackgroundColor(),
+							buffImg = ImagesMerger.mergeOnRight(buffImg, ImageIO.read(is), textParameters.getBackgroundColor(),
 									imageParameters.getSignerTextImageVerticalAlignment());
 							break;
 						case TOP:
-							buffImg = ImagesMerger.mergeOnTop(ImageIO.read(is), buffImg, textParamaters.getBackgroundColor());
+							buffImg = ImagesMerger.mergeOnTop(ImageIO.read(is), buffImg, textParameters.getBackgroundColor());
 							break;
 						case BOTTOM:
-							buffImg = ImagesMerger.mergeOnTop(buffImg, ImageIO.read(is), textParamaters.getBackgroundColor());
+							buffImg = ImagesMerger.mergeOnTop(buffImg, ImageIO.read(is), textParameters.getBackgroundColor());
+							break;
+						case FOREGROUND:
+							buffImg = ImagesMerger.mergeOnBackground(buffImg, ImageIO.read(is));
 							break;
 						default:
 							break;

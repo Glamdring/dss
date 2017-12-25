@@ -37,7 +37,7 @@ public class SignatureImageTextParameters {
 	 * Enum to define where to add the signer name on the image
 	 */
 	public enum SignerPosition {
-		TOP, BOTTOM, RIGHT, LEFT
+		TOP, BOTTOM, RIGHT, LEFT, FOREGROUND
 	}
 
     /**

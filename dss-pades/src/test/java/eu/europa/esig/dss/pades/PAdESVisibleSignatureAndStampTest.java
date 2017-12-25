@@ -6,6 +6,7 @@ import static org.junit.Assert.assertThat;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
@@ -21,6 +22,7 @@ import eu.europa.esig.dss.SignatureImagePageRange;
 import eu.europa.esig.dss.SignatureImageParameters;
 import eu.europa.esig.dss.SignatureImageParameters.VisualSignaturePagePlacement;
 import eu.europa.esig.dss.SignatureImageTextParameters;
+import eu.europa.esig.dss.SignatureImageTextParameters.SignerPosition;
 import eu.europa.esig.dss.SignatureLevel;
 import eu.europa.esig.dss.SignatureValue;
 import eu.europa.esig.dss.ToBeSigned;
@@ -42,6 +44,7 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		params.getSignatureImageParameters().setImage(image);
 		params.getSignatureImageParameters().setTextParameters(new SignatureImageTextParameters());
 		params.getSignatureImageParameters().getTextParameters().setText("Demo signature");
+		params.getSignatureImageParameters().getTextParameters().setSignerNamePosition(SignerPosition.FOREGROUND);
 		params.getSignatureImageParameters().setPageRange(new SignatureImagePageRange());
 		params.getSignatureImageParameters().setxAxis(25);
 		params.getSignatureImageParameters().setyAxis(15);
@@ -54,6 +57,7 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		params.getStampImageParameters().setImage(image);
 		params.getStampImageParameters().setTextParameters(new SignatureImageTextParameters());
 		params.getStampImageParameters().getTextParameters().setText("Demo signature");
+		params.getStampImageParameters().getTextParameters().setSignerNamePosition(SignerPosition.FOREGROUND);
 		params.getStampImageParameters().setPageRange(new SignatureImagePageRange());
 		params.getStampImageParameters().setxAxis(25);
 		params.getStampImageParameters().setyAxis(15);
@@ -84,9 +88,9 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		assertThat(result.getPage(1).getAnnotations().size(), equalTo(3));
 		assertThat(result.getPage(2).getAnnotations().size(), equalTo(1));
 		// commented-out piece for manual testing
-//		try (FileOutputStream fos = new FileOutputStream("c:\\tmp\\out.pdf")) {
-//			IOUtils.copy(signedDocument.openStream(), fos);
-//		}
+		try (FileOutputStream fos = new FileOutputStream("c:\\tmp\\out.pdf")) {
+			IOUtils.copy(signedDocument.openStream(), fos);
+		}
 	}
 
 	@Override
