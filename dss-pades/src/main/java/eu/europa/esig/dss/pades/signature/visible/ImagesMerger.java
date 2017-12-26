@@ -157,7 +157,7 @@ public final class ImagesMerger {
 		int imageType = BufferedImage.TYPE_INT_RGB;
 
 		if (ImageUtils.isTransparent(image1) || ImageUtils.isTransparent(image2)) {
-			LOG.warn("Transparency detected and enabled (be careful not valid with PDF/A !)");
+			LOG.debug("Transparency detected and enabled (be careful not valid with PDF/A !)");
 			imageType = BufferedImage.TYPE_INT_ARGB;
 		}
 

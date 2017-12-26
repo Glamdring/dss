@@ -6,7 +6,6 @@ import static org.junit.Assert.assertThat;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
@@ -69,6 +68,7 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		PDDocument twiceSigned = PDDocument.load(twiceSignedDocument.openStream());
 		assertThat(twiceSigned.getSignatureFields().size(), equalTo(2));
 		
+		// commented-out piece for manual testing
 //		try (FileOutputStream fos = new FileOutputStream("c:\\tmp\\out-twice.pdf")) {
 //			IOUtils.copy(twiceSignedDocument.openStream(), fos);
 //		}
@@ -76,6 +76,8 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 	
 	private DSSDocument signDocumentWithStamps(DSSDocument document, DSSDocument image) {
 		PAdESSignatureParameters params = new PAdESSignatureParameters();
+		params.setSignatureSubFilter("adbe.pkcs7.detached");
+		
 		params.setSignatureImageParameters(new SignatureImageParameters());
 		params.getSignatureImageParameters().setImage(image);
 		params.getSignatureImageParameters().setTextParameters(new SignatureImageTextParameters());

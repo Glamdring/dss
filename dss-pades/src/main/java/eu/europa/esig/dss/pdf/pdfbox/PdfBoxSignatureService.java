@@ -26,6 +26,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,24 +37,27 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import org.apache.pdfbox.cos.COSArray;
+import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSStream;
 import org.apache.pdfbox.cos.COSString;
+import org.apache.pdfbox.io.IOUtils;
+import org.apache.pdfbox.io.RandomAccessBuffer;
+import org.apache.pdfbox.io.RandomAccessRead;
+import org.apache.pdfbox.pdfwriter.COSWriter;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.PDPageContentStream.AppendMode;
 import org.apache.pdfbox.pdmodel.PDResources;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.graphics.form.PDFormXObject;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.apache.pdfbox.pdmodel.interactive.action.PDActionNamed;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationPopup;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationRubberStamp;
@@ -67,7 +71,6 @@ import org.apache.pdfbox.pdmodel.interactive.digitalsignature.SignatureOptions;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.visible.PDVisibleSigProperties;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.visible.PDVisibleSignDesigner;
 import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
-import org.apache.pdfbox.pdmodel.interactive.form.PDField;
 import org.apache.pdfbox.pdmodel.interactive.form.PDSignatureField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,7 +116,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		PDDocument pdDocument = null;
 		try {
-			pdDocument = loadAndStampDocument(toSignDocument, parameters);
+			pdDocument = PDDocument.load(toSignDocument); //loadAndStampDocument(toSignDocument, parameters, digestAlgorithm, signatureValue);
 			PDSignature pdSignature = createSignatureDictionary(parameters, pdDocument);
 
 			return signDocumentAndReturnDigest(parameters, signatureValue, outputStream, pdDocument, pdSignature, digestAlgorithm);
@@ -144,19 +147,46 @@ class PdfBoxSignatureService implements PDFSignatureService {
 
 	private PDDocument loadAndStampDocument(InputStream pdfData, PAdESSignatureParameters parameters)
 			throws IOException {
-		PDDocument pdDocument = PDDocument.load(pdfData);
+		byte[] pdfBytes = IOUtils.toByteArray(pdfData);
+		PDDocument pdDocument = PDDocument.load(pdfBytes);
 		if (parameters.getStampImageParameters() != null) {
-			addStamps(pdDocument, parameters.getStampImageParameters());
+			List<PDAnnotation> annotations = addStamps(pdDocument, parameters.getStampImageParameters());
+			setDocumentId(parameters, pdDocument);
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			pdDocument.save(baos);
-			pdDocument = PDDocument.load(new ByteArrayInputStream(baos.toByteArray()));
+			try (COSWriter writer = new COSWriter(baos, new RandomAccessBuffer(pdfBytes))) {
+				// force-add the annotations (wouldn't be saved in incremental updates otherwise)
+				annotations.forEach(ann -> addObjectToWrite(writer, ann.getCOSObject()));
+				
+				writer.write(pdDocument);
+			}
+			pdDocument = PDDocument.load(baos.toByteArray());
 		}
 		return pdDocument;
 	}
 
-	private void addStamps(PDDocument pdDocument, SignatureImageParameters parameters)
+	private void addObjectToWrite(COSWriter writer, COSDictionary cosObject) {
+		// the COSWriter does not expose the addObjectToWrite method, so we need reflection to add the annotations
+		try {
+			Method method = writer.getClass().getDeclaredMethod("addObjectToWrite", COSBase.class);
+			method.setAccessible(true);
+			method.invoke(writer, cosObject);
+		} catch (Exception ex) {
+			throw new RuntimeException(ex);
+		}
+	}
+
+	private List<PDAnnotation> getExistingAnnotations(PDDocument pdDocument) throws IOException {
+		List<PDAnnotation> annotations = new ArrayList<>();
+		for (PDPage page : pdDocument.getPages()) {
+			annotations.addAll(page.getAnnotations());
+		}
+		return annotations;
+	}
+
+	private List<PDAnnotation> addStamps(PDDocument pdDocument, SignatureImageParameters parameters)
 			throws FileNotFoundException, IOException {
 		int totalPages = pdDocument.getNumberOfPages();
+		List<PDAnnotation> result = new ArrayList<>();
 		for (int page = 0; page < totalPages; page++) {
 			if (parameters != null && placeSignatureOnPage(page, totalPages, parameters)) {
 
@@ -166,7 +196,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 				PDRectangle rect = new PDRectangle(position.getX(), position.getY(), parameters.getWidth(),
 						parameters.getHeight());
 				
-				addLink(pdDocument, page, rect);
+				PDAnnotationLink link = addLink(pdDocument, page, rect);
 				PDAnnotationRubberStamp stamp = createStamp(pdDocument, page, rect, position.getSignatureImage());
 				PDAnnotationPopup popup = addPopup(pdDocument, page, rect, stamp);
 				stamp.setPopup(popup);
@@ -174,8 +204,13 @@ class PdfBoxSignatureService implements PDFSignatureService {
 				pdDocument.getPage(page).getAnnotations().add(stamp);
 				
 				pdDocument.getPage(page).getCOSObject().setNeedToBeUpdated(true);
+				
+				result.add(stamp);
+				result.add(popup);
+				result.add(link);
 			}
 		}
+		return result;
 	}
 
 	private PDAnnotationPopup addPopup(PDDocument pdDocument, int page, PDRectangle rect,
@@ -186,11 +221,13 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		popup.setContents("Signature");
 		popup.setPrinted(true);
 		popup.setPage(pdDocument.getPage(page));
+		popup.getCOSObject().setNeedToBeUpdated(true);
+		popup.setAnnotationName("SignaturePopup");
 		pdDocument.getPage(page).getAnnotations().add(popup);
 		return popup;
 	}
 
-	private void addLink(PDDocument pdDocument, int page, PDRectangle rect) throws IOException {
+	private PDAnnotationLink addLink(PDDocument pdDocument, int page, PDRectangle rect) throws IOException {
 		PDAnnotationLink link = new PDAnnotationLink();
 		link.setRectangle(rect);
 		link.setPage(pdDocument.getPage(page));
@@ -200,7 +237,10 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		link.setPrinted(true);
 		link.setBorderStyle(new PDBorderStyleDictionary());
 		link.getBorderStyle().setWidth(0);
+		link.getCOSObject().setNeedToBeUpdated(true);
+		link.setAnnotationName("SignatureLink");
 		pdDocument.getPage(page).getAnnotations().add(link);
+		return link;
 	}
 
 	private PDAnnotationRubberStamp createStamp(final PDDocument pdDocument, int page, PDRectangle rect, byte[] image) throws FileNotFoundException, IOException {
@@ -223,18 +263,19 @@ class PdfBoxSignatureService implements PDFSignatureService {
         form.setBBox(rect);
     	form.setFormType(1);
 
-		PDImageXObject ximage = PDImageXObject.createFromByteArray(pdDocument, image, null);
-		// adjust the image to the target rectangle and add it to the stream
-    	try (PDPageContentStream stream = new PDPageContentStream(pdDocument, pdDocument.getPage(page), AppendMode.APPEND, false)) {
-    		stream.drawImage(ximage, rect.getLowerLeftX(), rect.getLowerLeftY(), rect.getWidth(), rect.getHeight());
+    	PDImageXObject ximage = PDImageXObject.createFromByteArray(pdDocument, image, "stamp");
+    	try (OutputStream formStream = form.getStream().createOutputStream()) {
+			ImageUtils.drawXObject(ximage, form.getResources(), formStream, rect.getLowerLeftX(), rect.getLowerLeftY(),
+					rect.getWidth(), rect.getHeight());
     	}
-        PDAppearanceStream myDic = new PDAppearanceStream(form.getCOSObject());
+    	
+    	PDAppearanceStream myDic = new PDAppearanceStream(form.getCOSObject());
         PDAppearanceDictionary appearance = new PDAppearanceDictionary(new COSDictionary());
     	appearance.setNormalAppearance(myDic);
     	stamp.setAppearance(appearance);
 		return stamp;
 	}
-
+	
 	private byte[] signDocumentAndReturnDigest(final PAdESSignatureParameters parameters, final byte[] signatureBytes,
 			final OutputStream fileOutputStream, final PDDocument pdDocument, final PDSignature pdSignature,
 			final DigestAlgorithm digestAlgorithm) throws DSSException {
@@ -242,27 +283,14 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		SignatureOptions options = new SignatureOptions();
 		try {
 
-			final MessageDigest digest = DSSUtils.getMessageDigest(digestAlgorithm);
-			// register signature dictionary and sign interface
-			SignatureInterface signatureInterface = new SignatureInterface() {
-
-				@Override
-				public byte[] sign(InputStream content) throws IOException {
-					byte[] b = new byte[4096];
-					int count;
-					while ((count = content.read(b)) > 0) {
-						digest.update(b, 0, count);
-					}
-					return signatureBytes;
-				}
-			};
-
+			LocalSignatureInterface signatureInterface = new LocalSignatureInterface(digestAlgorithm, signatureBytes);
+			
 			options.setPreferredSignatureSize(parameters.getSignatureSize());
 			fillImageParameters(pdDocument, parameters, options);
 			pdDocument.addSignature(pdSignature, signatureInterface, options);
 
 			saveDocumentIncrementally(parameters, fileOutputStream, pdDocument);
-			final byte[] digestValue = digest.digest();
+			final byte[] digestValue = signatureInterface.getDigest().digest();
 			if (LOG.isDebugEnabled()) {
 				LOG.debug("Digest to be signed: " + Utils.toHex(digestValue));
 			}
@@ -403,18 +431,22 @@ class PdfBoxSignatureService implements PDFSignatureService {
 	public void saveDocumentIncrementally(PAdESSignatureParameters parameters, OutputStream outputStream, PDDocument pdDocument)
 			throws DSSException {
 		try {
-			// the document needs to have an ID, if not a ID based on the current system
-			// time is used, and then the
-			// digest of the signed data is different
-			if (pdDocument.getDocumentId() == null) {
-
-				final byte[] documentIdBytes = DSSUtils.digest(DigestAlgorithm.SHA256,
-						parameters.bLevel().getSigningDate().toString().getBytes());
-				pdDocument.setDocumentId(DSSUtils.toLong(documentIdBytes));
-			}
+			setDocumentId(parameters, pdDocument);
 			pdDocument.saveIncremental(outputStream);
 		} catch (IOException e) {
 			throw new DSSException(e);
+		}
+	}
+
+	private void setDocumentId(PAdESSignatureParameters parameters, PDDocument pdDocument) {
+		// the document needs to have an ID, if not a ID based on the current system
+		// time is used, and then the
+		// digest of the signed data is different
+		if (pdDocument.getDocumentId() == null) {
+
+			final byte[] documentIdBytes = DSSUtils.digest(DigestAlgorithm.SHA256,
+					parameters.bLevel().getSigningDate().toString().getBytes());
+			pdDocument.setDocumentId(DSSUtils.toLong(documentIdBytes));
 		}
 	}
 
@@ -746,4 +778,38 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		return newPdfDoc;
 	}
 
+	public static class LocalSignatureInterface implements SignatureInterface {
+		private final MessageDigest digest;
+		private final byte[] signatureBytes;
+		
+		public LocalSignatureInterface(DigestAlgorithm digestAlgorithm, byte[] signatureBytes) {
+			digest = DSSUtils.getMessageDigest(digestAlgorithm);
+			this.signatureBytes = signatureBytes;
+		}
+		
+		@Override
+		public byte[] sign(InputStream content) throws IOException {
+			byte[] b = new byte[4096];
+			int count;
+			while ((count = content.read(b)) > 0) {
+				digest.update(b, 0, count);
+			}
+			return signatureBytes;
+		}
+		
+		public MessageDigest getDigest() {
+			return digest;
+		}
+	};
+
+	public static class LocalCOSWriter extends COSWriter {
+
+		public LocalCOSWriter(OutputStream os, RandomAccessRead randomAccessRead) throws IOException {
+			super(os, randomAccessRead);
+		}
+
+		public byte[] getFullOutput() {
+			return ((ByteArrayOutputStream) getOutput()).toByteArray();
+		}
+	}
 }
