@@ -23,10 +23,15 @@ package eu.europa.esig.dss;
 import java.awt.Color;
 import java.awt.Font;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+
 /**
  * This class allows to custom text generation in the PAdES visible signature
  *
  */
+@XmlAccessorType(XmlAccessType.FIELD)
 public class SignatureImageTextParameters {
 
 	public static final Font DEFAULT_FONT = new Font("serif", Font.PLAIN, 12);
@@ -66,18 +71,21 @@ public class SignatureImageTextParameters {
 	 * This variable defines the font to use when the signerNamePosition is not
 	 * NONE)
 	 */
+	@XmlJavaTypeAdapter(FontAdapter.class)
 	private Font font = DEFAULT_FONT;
 
 	/**
 	 * This variable defines the text color to use when the signerNamePosition
 	 * is not NONE (default is BLACK)
 	 */
+	@XmlJavaTypeAdapter(ColorAdapter.class)
 	private Color textColor = DEFAUT_TEXT_COLOR;
 
 	/**
 	 * This variable defines the text color to use when the signerNamePosition
 	 * is not NONE (default is WHITE)
 	 */
+	@XmlJavaTypeAdapter(ColorAdapter.class)
 	private Color backgroundColor = DEFAULT_BACKGROUND_COLOR;
 
 	public SignerPosition getSignerNamePosition() {

@@ -22,12 +22,16 @@ package eu.europa.esig.dss;
 
 import java.awt.Color;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 /**
  * Parameters for a visible signature creation
  *
  */
+@XmlAccessorType(XmlAccessType.FIELD)
 public class SignatureImageParameters {
 
 	public static final int DEFAULT_PAGE = 1;
@@ -119,6 +123,7 @@ public class SignatureImageParameters {
 	/**
 	 * This variable contains the image to use (company logo,...)
 	 */
+	@XmlTransient
 	private DSSDocument image;
 	
 	private RemoteDocument imageDocument;
@@ -160,7 +165,6 @@ public class SignatureImageParameters {
 	 */
 	private int height;
         
-        
 
 	/**
 	 * This variable defines a percent to zoom (100% means no scaling).
@@ -170,6 +174,7 @@ public class SignatureImageParameters {
 	/**
 	 * This variable defines the color of the image
 	 */
+	@XmlJavaTypeAdapter(ColorAdapter.class)
 	private Color backgroundColor;
 
 	/**
@@ -216,7 +221,6 @@ public class SignatureImageParameters {
     
     private String dateFormat = "dd.MM.yyyy HH:mm ZZZ";
     
-	@XmlTransient
 	public DSSDocument getImage() {
 		return image;
 	}
@@ -272,7 +276,6 @@ public class SignatureImageParameters {
     public void setHeight(int height) {
         this.height = height;
     }
-
 
 	public Color getBackgroundColor() {
 		return backgroundColor;
