@@ -14,7 +14,9 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Locale;
 
@@ -30,6 +32,8 @@ import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.plugins.jpeg.JPEGImageWriteParam;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
 
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.pdmodel.PDResources;
@@ -47,6 +51,7 @@ import eu.europa.esig.dss.SignatureImageParameters;
 import eu.europa.esig.dss.SignatureImageTextParameters;
 import eu.europa.esig.dss.SignatureImageTextParameters.SignerPosition;
 import eu.europa.esig.dss.utils.Utils;
+import eu.europa.esig.dss.x509.CertificateToken;
 
 /**
  * A static utilities that helps in creating ImageAndResolution
@@ -73,7 +78,11 @@ public class ImageUtils {
 	}
 
 	public static ImageAndResolution create(final SignatureImageParameters imageParameters) throws IOException {
-		SignatureImageTextParameters textParameters = imageParameters.getTextParameters();
+		return create(imageParameters, null, null);
+	}
+	
+	public static ImageAndResolution create(final SignatureImageParameters imageParameters, CertificateToken signingCertificate, Date signingDate) throws IOException {
+		SignatureImageTextParameters textLeftParameters = imageParameters.getTextParameters();
 
 		// the image can be specified either as a DSSDocument or as RemoteDocument. In the latter case, we convert it
 		DSSDocument image = imageParameters.getImage();
@@ -83,32 +92,49 @@ public class ImageUtils {
 					imageParameters.getImageDocument().getMimeType());
 		}
 		
-		if (textParameters != null && Utils.isStringNotEmpty(textParameters.getText())) {
-			Color textBackground = textParameters.getBackgroundColor();
-			if (textParameters.getSignerNamePosition() == SignerPosition.FOREGROUND) {
-				textBackground = new Color(255, 255, 255, 0);
+		if (textLeftParameters != null && Utils.isStringNotEmpty(textLeftParameters.getText())) {
+			Color textBackground = textLeftParameters.getBackgroundColor();
+			if (textLeftParameters.getSignerNamePosition() == SignerPosition.FOREGROUND) {
+				// fully transparent if two text images are going to be merged (their transparency is set when merging)
+				// partially-transparent if only the left image is going to be used
+				if (imageParameters.getTextRightParameters() != null) {
+					textBackground = new Color(255, 255, 255, 0);
+				} else {
+					textBackground = new Color(255, 255, 255, 100);
+				}
 			}
 			
-			BufferedImage buffImg = ImageTextWriter.createTextImage(textParameters.getText(), textParameters.getFont(), textParameters.getTextColor(),
-					textBackground, getDpi(imageParameters.getDpi()), textParameters.getSignerTextHorizontalAlignment());
-
+			String transformedText = transformText(textLeftParameters.getText(), imageParameters.getDateFormat(), signingDate, signingCertificate);
+			BufferedImage buffImg = ImageTextWriter.createTextImage(transformedText, textLeftParameters.getFont(), textLeftParameters.getTextColor(),
+					textBackground, getDpi(imageParameters.getDpi()), textLeftParameters.getSignerTextHorizontalAlignment());
+			
+			// in case there's a right side configured, join it with the left side of the text to form a single text image
+			SignatureImageTextParameters textRightParameters = imageParameters.getTextRightParameters();
+			if (textRightParameters != null) {
+				String transformedRightText = transformText(textRightParameters.getText(), imageParameters.getDateFormat(), signingDate, signingCertificate);
+				BufferedImage rightImg = ImageTextWriter.createTextImage(transformedRightText, textRightParameters.getFont(), textRightParameters.getTextColor(),
+						textBackground, getDpi(imageParameters.getDpi()), textRightParameters.getSignerTextHorizontalAlignment());
+				
+				buffImg = ImagesMerger.mergeOnRight(buffImg, rightImg, new Color(255, 255, 255, 100), imageParameters.getSignerTextImageVerticalAlignment());
+			}
+			
 			if (image != null) {
 				try (InputStream is = image.openStream()) {
 					if (is != null) {
-						switch (textParameters.getSignerNamePosition()) {
+						switch (textLeftParameters.getSignerNamePosition()) {
 						case LEFT:
-							buffImg = ImagesMerger.mergeOnRight(ImageIO.read(is), buffImg, textParameters.getBackgroundColor(),
+							buffImg = ImagesMerger.mergeOnRight(ImageIO.read(is), buffImg, textLeftParameters.getBackgroundColor(),
 									imageParameters.getSignerTextImageVerticalAlignment());
 							break;
 						case RIGHT:
-							buffImg = ImagesMerger.mergeOnRight(buffImg, ImageIO.read(is), textParameters.getBackgroundColor(),
+							buffImg = ImagesMerger.mergeOnRight(buffImg, ImageIO.read(is), textLeftParameters.getBackgroundColor(),
 									imageParameters.getSignerTextImageVerticalAlignment());
 							break;
 						case TOP:
-							buffImg = ImagesMerger.mergeOnTop(ImageIO.read(is), buffImg, textParameters.getBackgroundColor());
+							buffImg = ImagesMerger.mergeOnTop(ImageIO.read(is), buffImg, textLeftParameters.getBackgroundColor());
 							break;
 						case BOTTOM:
-							buffImg = ImagesMerger.mergeOnTop(buffImg, ImageIO.read(is), textParameters.getBackgroundColor());
+							buffImg = ImagesMerger.mergeOnTop(buffImg, ImageIO.read(is), textLeftParameters.getBackgroundColor());
 							break;
 						case FOREGROUND:
 							buffImg = ImagesMerger.mergeOnBackground(buffImg, ImageIO.read(is));
@@ -124,6 +150,41 @@ public class ImageUtils {
 
 		// Image only
 		return readAndDisplayMetadata(image);
+	}
+
+	private static String transformText(String text, String dateFormat, Date signingDate, CertificateToken signingCertificate) {
+		if (signingCertificate != null) {
+			try {
+				String principal = signingCertificate.getSubjectX500Principal().getName();
+				LdapName ldapName = new LdapName(principal);
+				String[] names = ldapName.getRdns().stream()
+						.filter(rdn -> rdn.getType().equals("CN"))
+						.map(Rdn::getValue)
+						.map(String.class::cast)
+						.findFirst().orElse("").split(" ");
+				text = text.replace("%CN_1%", names[0]);
+				if (names.length > 1) {
+					text = text.replace("%CN_2%", names[1]);
+				} else {
+					text = text.replace("%CN_2%", "");
+				}
+				if (names.length > 2) {
+					text = text.replace("%CN_3%", names[2]);
+				} else {
+					text = text.replace("%CN_3%", "");
+				}
+			} catch (Exception ex) {
+				throw new RuntimeException(ex);
+			}
+		}
+		if (signingDate == null) {
+			signingDate = new Date();
+		}
+		if (text.contains("%DateTimeWithTimeZone%")) {
+			SimpleDateFormat df = new SimpleDateFormat(dateFormat);
+			text = text.replace("%DateTimeWithTimeZone%", df.format(signingDate));
+		}
+		return text;
 	}
 
 	/**

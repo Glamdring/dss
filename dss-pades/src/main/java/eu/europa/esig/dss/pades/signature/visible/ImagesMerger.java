@@ -23,6 +23,7 @@ package eu.europa.esig.dss.pades.signature.visible;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
 
 import org.slf4j.Logger;
@@ -109,7 +110,6 @@ public final class ImagesMerger {
 	}
 
 	public static BufferedImage mergeOnBackground(final BufferedImage front, final BufferedImage back) {
-		// TODO support alignment of front image - currently only MIDDLE is supported
 		if (front == null) {
 			return back;
 		} else if (back == null) {
@@ -117,33 +117,17 @@ public final class ImagesMerger {
 		}
 
 		final int newImageWidth = Math.max(front.getWidth(), back.getWidth());
-		final int newImageHeigth = Math.max(front.getHeight(), back.getHeight());
+		final int newImageHeight = Math.max(front.getHeight(), back.getHeight());
 		final int imageType = getImageType(front, back);
 
-		BufferedImage combined = new BufferedImage(newImageWidth, newImageHeigth, imageType);
+		BufferedImage combined = new BufferedImage(newImageWidth, newImageHeight, imageType);
 		Graphics2D g = combined.createGraphics();
 
 		ImageUtils.initRendering(g);
 
-		int frontX = 0;
-		int frontY = 0;
-		int backX = 0;
-		int backY = 0;
-		
-		if (front.getWidth() > back.getWidth()) {
-			backX = (front.getWidth() - back.getWidth()) / 2;
-		} else {
-			frontX = (back.getWidth() - front.getWidth()) / 2;
-		}
-		
-		if (front.getHeight() > back.getHeight()) {
-			backY = (front.getHeight() - back.getHeight()) / 2;
-		} else {
-			frontY = (back.getHeight() - front.getHeight()) / 2;
-		}
-		
-		g.drawImage(back, backX, backY, newImageWidth, newImageHeigth, null);
-		g.drawImage(front, frontX, frontY, newImageWidth, newImageHeigth, null);
+		g.drawImage(back.getScaledInstance(newImageWidth, newImageHeight, Image.SCALE_SMOOTH), 
+				0, 0, newImageWidth, newImageHeight, null);
+		g.drawImage(front, 0, 0, newImageWidth, newImageHeight, null);
 
 		return combined;
 	}

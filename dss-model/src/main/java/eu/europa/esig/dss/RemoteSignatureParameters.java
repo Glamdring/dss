@@ -39,6 +39,7 @@ public class RemoteSignatureParameters extends AbstractSerializableSignaturePara
 	 */
 	private ASiCContainerType asicContainerType;
 
+	// TODO remote value object
 	private SignatureImageParameters signatureImageParameters;
 	
 	public RemoteSignatureParameters() {

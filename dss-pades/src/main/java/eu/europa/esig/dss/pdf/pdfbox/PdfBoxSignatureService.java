@@ -150,7 +150,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		byte[] pdfBytes = IOUtils.toByteArray(pdfData);
 		PDDocument pdDocument = PDDocument.load(pdfBytes);
 		if (parameters.getStampImageParameters() != null) {
-			List<PDAnnotation> annotations = addStamps(pdDocument, parameters.getStampImageParameters());
+			List<PDAnnotation> annotations = addStamps(pdDocument, parameters);
 			setDocumentId(parameters, pdDocument);
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			try (COSWriter writer = new COSWriter(baos, new RandomAccessBuffer(pdfBytes))) {
@@ -183,14 +183,18 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		return annotations;
 	}
 
-	private List<PDAnnotation> addStamps(PDDocument pdDocument, SignatureImageParameters parameters)
+	private List<PDAnnotation> addStamps(PDDocument pdDocument, PAdESSignatureParameters signatureParameters)
 			throws FileNotFoundException, IOException {
 		int totalPages = pdDocument.getNumberOfPages();
 		List<PDAnnotation> result = new ArrayList<>();
+		SignatureImageParameters parameters = signatureParameters.getStampImageParameters();
 		for (int page = 0; page < totalPages; page++) {
 			if (parameters != null && placeSignatureOnPage(page, totalPages, parameters)) {
 
-				ImageAndResolution ires = ImageUtils.create(parameters);
+				ImageAndResolution ires = ImageUtils.create(parameters, 
+						signatureParameters.getSigningCertificate(), 
+						signatureParameters.bLevel().getSigningDate());
+				
 				SignatureImageAndPosition position = SignatureImageAndPositionProcessor.process(parameters, pdDocument,	ires);
 
 				PDRectangle rect = new PDRectangle(position.getX(), position.getY(), parameters.getWidth(),
@@ -251,7 +255,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		stamp.setBorderStyle(new PDBorderStyleDictionary());
 		stamp.getBorderStyle().setWidth(0);
 		stamp.setHidden(false);
-		stamp.setSubject("Subject");
+		stamp.setSubject("Subject"); //TODO actual subject?
 		stamp.setPrinted(true);
 		stamp.setPage(pdDocument.getPage(page));
 		stamp.getCOSObject().setNeedToBeUpdated(true);
@@ -264,6 +268,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
     	form.setFormType(1);
 
     	PDImageXObject ximage = PDImageXObject.createFromByteArray(pdDocument, image, "stamp");
+    	
     	try (OutputStream formStream = form.getStream().createOutputStream()) {
 			ImageUtils.drawXObject(ximage, form.getResources(), formStream, rect.getLowerLeftX(), rect.getLowerLeftY(),
 					rect.getWidth(), rect.getHeight());
@@ -325,14 +330,15 @@ class PdfBoxSignatureService implements PDFSignatureService {
 	protected void fillImageParameters(final PDDocument doc, final PAdESSignatureParameters signatureParameters,
 			SignatureOptions options) throws IOException {
 		SignatureImageParameters signatureImageParameters = signatureParameters.getSignatureImageParameters();
-		fillImageParameters(doc, signatureImageParameters, options);
+		fillImageParameters(doc, signatureImageParameters, options, signatureParameters.getSigningCertificate(),
+				signatureParameters.bLevel().getSigningDate());
 	}
 
 	protected void fillImageParameters(final PDDocument doc, final SignatureImageParameters signatureImageParameters,
-			SignatureOptions options) throws IOException {
+			SignatureOptions options, CertificateToken signingCertificate, Date signingDate) throws IOException {
 		if (signatureImageParameters != null) {
 			// DSS-747. Using the DPI resolution to convert java size to dot
-			ImageAndResolution ires = ImageUtils.create(signatureImageParameters);
+			ImageAndResolution ires = ImageUtils.create(signatureImageParameters, signingCertificate, signingDate);
 
 			SignatureImageAndPosition signatureImageAndPosition = SignatureImageAndPositionProcessor
 					.process(signatureImageParameters, doc, ires);

@@ -87,7 +87,7 @@ class PdfBoxDocTimeStampService extends PdfBoxSignatureService implements PDFSig
 	@Override
 	protected void fillImageParameters(final PDDocument doc, final PAdESSignatureParameters signatureParameters, SignatureOptions options) throws IOException {
 		SignatureImageParameters signatureImageParameters = signatureParameters.getTimestampImageParameters();
-		fillImageParameters(doc, signatureImageParameters, options);
+		fillImageParameters(doc, signatureImageParameters, options, null, null);
 	}
 
 }

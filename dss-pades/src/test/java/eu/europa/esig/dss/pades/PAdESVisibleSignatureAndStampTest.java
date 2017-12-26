@@ -81,8 +81,10 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		params.setSignatureImageParameters(new SignatureImageParameters());
 		params.getSignatureImageParameters().setImage(image);
 		params.getSignatureImageParameters().setTextParameters(new SignatureImageTextParameters());
-		params.getSignatureImageParameters().getTextParameters().setText("Demo signature");
+		params.getSignatureImageParameters().getTextParameters().setText("%CN_1%\n%CN_2%");
 		params.getSignatureImageParameters().getTextParameters().setSignerNamePosition(SignerPosition.FOREGROUND);
+		params.getSignatureImageParameters().setTextRightParameters(new SignatureImageTextParameters());
+		params.getSignatureImageParameters().getTextRightParameters().setText("Signature created by\nTest\nDate: %DateTimeWithTimeZone%");
 		params.getSignatureImageParameters().setPageRange(new SignatureImagePageRange());
 		params.getSignatureImageParameters().setxAxis(25);
 		params.getSignatureImageParameters().setyAxis(15);
@@ -94,8 +96,10 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		params.setStampImageParameters(new SignatureImageParameters());
 		params.getStampImageParameters().setImage(image);
 		params.getStampImageParameters().setTextParameters(new SignatureImageTextParameters());
-		params.getStampImageParameters().getTextParameters().setText("Demo signature");
+		params.getStampImageParameters().getTextParameters().setText("%CN_1%\n%CN_2%");
 		params.getStampImageParameters().getTextParameters().setSignerNamePosition(SignerPosition.FOREGROUND);
+		params.getStampImageParameters().setTextRightParameters(new SignatureImageTextParameters());
+		params.getStampImageParameters().getTextRightParameters().setText("Signature created by\nTest\nDate: %DateTimeWithTimeZone%");
 		params.getStampImageParameters().setPageRange(new SignatureImagePageRange());
 		params.getStampImageParameters().setxAxis(25);
 		params.getStampImageParameters().setyAxis(15);

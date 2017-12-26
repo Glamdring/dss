@@ -202,10 +202,20 @@ public class SignatureImageParameters {
 	private VisualSignatureAlignmentVertical alignmentVertical;
 
 	/**
-	 * This variable is use to defines the text to generate on the image
-	 */
+     * This variable is use to define the text to generate on the left side of the
+     * image (or if no right side is specified - the whole image)
+     */
 	private SignatureImageTextParameters textParameters;
 
+	/**
+     * This variable is use to define the text to generate on the right side of the
+     * image (leave blank if you don't need two columns)
+     */
+    private SignatureImageTextParameters textRightParameters;
+    
+    
+    private String dateFormat = "dd.MM.yyyy HH:mm ZZZ";
+    
 	@XmlTransient
 	public DSSDocument getImage() {
 		return image;
@@ -288,14 +298,6 @@ public class SignatureImageParameters {
 		this.signerTextImageVerticalAlignment = signerTextImageVerticalAlignment;
 	}
 
-	public SignatureImageTextParameters getTextParameters() {
-		return textParameters;
-	}
-
-	public void setTextParameters(SignatureImageTextParameters textParameters) {
-		this.textParameters = textParameters;
-	}
-
 	public VisualSignatureRotation getRotation() {
 		return rotation;
 	}
@@ -343,4 +345,28 @@ public class SignatureImageParameters {
 	public void setImageDocument(RemoteDocument imageDocument) {
 		this.imageDocument = imageDocument;
 	}
+
+    public SignatureImageTextParameters getTextRightParameters() {
+        return textRightParameters;
+    }
+
+    public SignatureImageTextParameters getTextParameters() {
+        return textParameters;
+    }
+
+    public void setTextRightParameters(SignatureImageTextParameters textRightParameters) {
+        this.textRightParameters = textRightParameters;
+    }
+
+    public void setTextParameters(SignatureImageTextParameters textParameters) {
+        this.textParameters = textParameters;
+    }
+
+    public String getDateFormat() {
+        return dateFormat;
+    }
+
+    public void setDateFormat(String dateFormat) {
+        this.dateFormat = dateFormat;
+    }
 }
