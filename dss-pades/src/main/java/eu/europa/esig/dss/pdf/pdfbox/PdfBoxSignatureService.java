@@ -116,7 +116,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		PDDocument pdDocument = null;
 		try {
-			pdDocument = PDDocument.load(toSignDocument); //loadAndStampDocument(toSignDocument, parameters, digestAlgorithm, signatureValue);
+			pdDocument = loadAndStampDocument(toSignDocument, parameters);
 			PDSignature pdSignature = createSignatureDictionary(parameters, pdDocument);
 
 			return signDocumentAndReturnDigest(parameters, signatureValue, outputStream, pdDocument, pdSignature, digestAlgorithm);

@@ -76,14 +76,10 @@ public class ImageUtils {
 
 	private ImageUtils() {
 	}
-
-	public static ImageAndResolution create(final SignatureImageParameters imageParameters) throws IOException {
-		return create(imageParameters, null, null);
-	}
 	
 	public static ImageAndResolution create(final SignatureImageParameters imageParameters, CertificateToken signingCertificate, Date signingDate) throws IOException {
 		SignatureImageTextParameters textLeftParameters = imageParameters.getTextParameters();
-
+		
 		// the image can be specified either as a DSSDocument or as RemoteDocument. In the latter case, we convert it
 		DSSDocument image = imageParameters.getImage();
 		if (image == null && imageParameters.getImageDocument() != null) {
@@ -155,7 +151,7 @@ public class ImageUtils {
 	private static String transformText(String text, String dateFormat, Date signingDate, CertificateToken signingCertificate) {
 		if (signingCertificate != null) {
 			try {
-				String principal = signingCertificate.getSubjectX500Principal().getName();
+				String principal = signingCertificate.getSubjectX500Principal().getName().replace("+", ",");
 				LdapName ldapName = new LdapName(principal);
 				String[] names = ldapName.getRdns().stream()
 						.filter(rdn -> rdn.getType().equals("CN"))
