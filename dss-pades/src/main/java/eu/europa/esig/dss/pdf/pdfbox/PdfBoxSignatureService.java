@@ -298,7 +298,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 			
 			options.setPreferredSignatureSize(parameters.getSignatureSize());
 			// 0 means no visible signature
-			if (parameters.getSignatureImageParameters().getPage() != 0) {
+			if (parameters.getSignatureImageParameters() != null && parameters.getSignatureImageParameters().getPage() != 0) {
 				fillImageParameters(pdDocument, parameters, options);
 			}
 			pdDocument.addSignature(pdSignature, signatureInterface, options);
@@ -359,7 +359,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 
 			PDVisibleSignDesigner visibleSig = new PDVisibleSignDesigner(doc,
 					new ByteArrayInputStream(signatureImageAndPosition.getSignatureImage()), 
-					getPage(signatureImageParameters.getPage(), doc.getNumberOfPages()));
+					getPage(signatureImageParameters.getPage(), doc.getNumberOfPages()) + 1);
 
 
 			if ((signatureImageParameters.getWidth() != 0) && (signatureImageParameters.getHeight() != 0)) {
@@ -369,7 +369,6 @@ class PdfBoxSignatureService implements PDFSignatureService {
 				visibleSig.width(ires.toXPoint(visibleSig.getWidth()));
 				visibleSig.height(ires.toYPoint(visibleSig.getHeight()));
 			}
-			
 
 			PDPage page = doc.getPage(getPage(signatureImageParameters.getPage(), doc.getNumberOfPages()));
 			visibleSig.xAxis(signatureImageAndPosition.getX());
