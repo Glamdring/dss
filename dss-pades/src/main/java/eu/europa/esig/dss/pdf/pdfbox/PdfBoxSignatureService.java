@@ -200,7 +200,8 @@ class PdfBoxSignatureService implements PDFSignatureService {
 						signatureParameters.bLevel().getSigningDate(),
 						pdfSignatureImageDir);
 				
-				SignatureImageAndPosition position = SignatureImageAndPositionProcessor.process(parameters, pdDocument,	ires);
+				SignatureImageAndPosition position = SignatureImageAndPositionProcessor.process(
+						parameters, pdDocument,	ires, getPage(parameters.getPage(), pdDocument.getNumberOfPages()));
 
 				PDRectangle rect = new PDRectangle(position.getX(), position.getY(), parameters.getWidth(),
 						parameters.getHeight());
@@ -314,7 +315,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 
 	private boolean placeSignatureOnPage(int page, int total, SignatureImageParameters signatureImageParameters) {
 		if (signatureImageParameters.getPagePlacement() == VisualSignaturePagePlacement.SINGLE_PAGE
-				&& page == signatureImageParameters.getPage() - 1) {
+				&& page == getPage(signatureImageParameters.getPage(), total)) {
 			return true;
 		} else if (signatureImageParameters.getPagePlacement() == VisualSignaturePagePlacement.ALL_PAGES) {
 			return true;
@@ -332,6 +333,11 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		return false;
 	}
 
+	private int getPage(int configuredPage, int total) {
+		// negative values are counted from the end of the document, e.g. -1 is the last page.
+		return configuredPage >= 0 ? configuredPage - 1 : total - Math.abs(configuredPage);
+	}
+
 	protected void fillImageParameters(final PDDocument doc, final PAdESSignatureParameters signatureParameters,
 			SignatureOptions options) throws IOException {
 		SignatureImageParameters signatureImageParameters = signatureParameters.getSignatureImageParameters();
@@ -346,10 +352,11 @@ class PdfBoxSignatureService implements PDFSignatureService {
 			ImageAndResolution ires = ImageUtils.create(signatureImageParameters, signingCertificate, signingDate, pdfSignatureImageDir);
 
 			SignatureImageAndPosition signatureImageAndPosition = SignatureImageAndPositionProcessor
-					.process(signatureImageParameters, doc, ires);
+					.process(signatureImageParameters, doc, ires, getPage(signatureImageParameters.getPage(), doc.getNumberOfPages()));
 
 			PDVisibleSignDesigner visibleSig = new PDVisibleSignDesigner(doc,
-					new ByteArrayInputStream(signatureImageAndPosition.getSignatureImage()), signatureImageParameters.getPage());
+					new ByteArrayInputStream(signatureImageAndPosition.getSignatureImage()), 
+					getPage(signatureImageParameters.getPage(), doc.getNumberOfPages()));
 
 
 			if ((signatureImageParameters.getWidth() != 0) && (signatureImageParameters.getHeight() != 0)) {
@@ -361,7 +368,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 			}
 			
 
-			PDPage page = doc.getPage(signatureImageParameters.getPage() - 1);
+			PDPage page = doc.getPage(getPage(signatureImageParameters.getPage(), doc.getNumberOfPages()));
 			visibleSig.xAxis(signatureImageAndPosition.getX());
 			visibleSig.yAxis(page.getCropBox().getHeight() - signatureImageAndPosition.getY() - visibleSig.getHeight());
 			
@@ -371,7 +378,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 			signatureProperties.visualSignEnabled(true).setPdVisibleSignature(visibleSig).buildSignature();
 
 			options.setVisualSignature(signatureProperties);
-			options.setPage(signatureImageParameters.getPage() - 1); // DSS-1138
+			options.setPage(getPage(signatureImageParameters.getPage(), doc.getNumberOfPages())); // DSS-1138
 		}
 	}
 

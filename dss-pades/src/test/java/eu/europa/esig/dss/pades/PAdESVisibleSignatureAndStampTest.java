@@ -91,7 +91,7 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		params.getSignatureImageParameters().setWidth(100);
 		params.getSignatureImageParameters().setHeight(30);
 		params.getSignatureImageParameters().setPagePlacement(VisualSignaturePagePlacement.SINGLE_PAGE);
-		params.getSignatureImageParameters().setPage(3);
+		params.getSignatureImageParameters().setPage(-1);
 		
 		params.setStampImageParameters(new SignatureImageParameters());
 		params.getStampImageParameters().setImage(image);

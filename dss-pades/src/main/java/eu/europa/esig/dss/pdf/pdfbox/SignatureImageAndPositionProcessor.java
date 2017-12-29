@@ -23,9 +23,9 @@ public class SignatureImageAndPositionProcessor {
     private static final String SUPPORTED_VERTICAL_ALIGNMENT_ERROR_MESSAGE = "not supported vertical alignment: ";
     private static final String SUPPORTED_HORIZONTAL_ALIGNMENT_ERROR_MESSAGE = "not supported horizontal alignment: ";
 
-    public static SignatureImageAndPosition process(final SignatureImageParameters signatureImageParameters, final PDDocument doc, final ImageAndResolution ires) throws IOException {
+    public static SignatureImageAndPosition process(final SignatureImageParameters signatureImageParameters, final PDDocument doc, final ImageAndResolution ires, int page) throws IOException {
         BufferedImage visualImageSignature = ImageIO.read(ires.getInputStream());
-        PDPage pdPage = doc.getPages().get(signatureImageParameters.getPage() - 1);
+        PDPage pdPage = doc.getPages().get(page);
 
         int rotate = getRotation(signatureImageParameters.getRotation(), pdPage);
         if(rotate != ANGLE_360) {
