@@ -297,7 +297,10 @@ class PdfBoxSignatureService implements PDFSignatureService {
 			LocalSignatureInterface signatureInterface = new LocalSignatureInterface(digestAlgorithm, signatureBytes);
 			
 			options.setPreferredSignatureSize(parameters.getSignatureSize());
-			fillImageParameters(pdDocument, parameters, options);
+			// 0 means no visible signature
+			if (parameters.getSignatureImageParameters().getPage() != 0) {
+				fillImageParameters(pdDocument, parameters, options);
+			}
 			pdDocument.addSignature(pdSignature, signatureInterface, options);
 
 			saveDocumentIncrementally(parameters, fileOutputStream, pdDocument);
