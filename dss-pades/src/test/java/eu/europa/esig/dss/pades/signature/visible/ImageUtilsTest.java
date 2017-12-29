@@ -20,7 +20,7 @@ public class ImageUtilsTest {
         SignatureImageParameters imageParameters = createSignatureImageParameters();
 
         Dimension optimalSizeDimension = ImageUtils.getOptimalSize(imageParameters);
-        ImageAndResolution imageAndResolution = ImageUtils.create(imageParameters, null, null);
+        ImageAndResolution imageAndResolution = ImageUtils.create(imageParameters, null, null, null);
 
         BufferedImage image = ImageIO.read(imageAndResolution.getInputStream());
 

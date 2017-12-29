@@ -21,6 +21,7 @@
 package eu.europa.esig.dss.pades.signature;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.util.List;
 
@@ -62,6 +63,8 @@ public class PAdESService extends AbstractSignatureService<PAdESSignatureParamet
 
 	private final PadesCMSSignedDataBuilder padesCMSSignedDataBuilder;
 
+	private File signatureImageDir;
+	
 	/**
 	 * This is the constructor to create an instance of the {@code PAdESService}. A certificate verifier must be
 	 * provided.
@@ -202,4 +205,8 @@ public class PAdESService extends AbstractSignatureService<PAdESSignatureParamet
 		return pdfSignatureService.addNewSignatureField(document, parameters);
 	}
 
+	public void setSignatureImageDir(File signatureImageDir) {
+		this.signatureImageDir = signatureImageDir;
+	}
+	
 }

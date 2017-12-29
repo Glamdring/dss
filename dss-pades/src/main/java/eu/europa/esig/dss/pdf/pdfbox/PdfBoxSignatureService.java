@@ -22,6 +22,7 @@ package eu.europa.esig.dss.pdf.pdfbox;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -108,6 +109,8 @@ class PdfBoxSignatureService implements PDFSignatureService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(PdfBoxSignatureService.class);
 
+	private File pdfSignatureImageDir;
+	
 	@Override
 	public byte[] digest(final InputStream toSignDocument, final PAdESSignatureParameters parameters,
 			final DigestAlgorithm digestAlgorithm) throws DSSException {
@@ -151,6 +154,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		PDDocument pdDocument = PDDocument.load(pdfBytes);
 		if (parameters.getStampImageParameters() != null) {
 			List<PDAnnotation> annotations = addStamps(pdDocument, parameters);
+			
 			setDocumentId(parameters, pdDocument);
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			try (COSWriter writer = new COSWriter(baos, new RandomAccessBuffer(pdfBytes))) {
@@ -193,7 +197,8 @@ class PdfBoxSignatureService implements PDFSignatureService {
 
 				ImageAndResolution ires = ImageUtils.create(parameters, 
 						signatureParameters.getSigningCertificate(), 
-						signatureParameters.bLevel().getSigningDate());
+						signatureParameters.bLevel().getSigningDate(),
+						pdfSignatureImageDir);
 				
 				SignatureImageAndPosition position = SignatureImageAndPositionProcessor.process(parameters, pdDocument,	ires);
 
@@ -338,7 +343,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 			SignatureOptions options, CertificateToken signingCertificate, Date signingDate) throws IOException {
 		if (signatureImageParameters != null) {
 			// DSS-747. Using the DPI resolution to convert java size to dot
-			ImageAndResolution ires = ImageUtils.create(signatureImageParameters, signingCertificate, signingDate);
+			ImageAndResolution ires = ImageUtils.create(signatureImageParameters, signingCertificate, signingDate, pdfSignatureImageDir);
 
 			SignatureImageAndPosition signatureImageAndPosition = SignatureImageAndPositionProcessor
 					.process(signatureImageParameters, doc, ires);
@@ -346,8 +351,6 @@ class PdfBoxSignatureService implements PDFSignatureService {
 			PDVisibleSignDesigner visibleSig = new PDVisibleSignDesigner(doc,
 					new ByteArrayInputStream(signatureImageAndPosition.getSignatureImage()), signatureImageParameters.getPage());
 
-			visibleSig.xAxis(signatureImageAndPosition.getX());
-			visibleSig.yAxis(signatureImageAndPosition.getY());
 
 			if ((signatureImageParameters.getWidth() != 0) && (signatureImageParameters.getHeight() != 0)) {
 				visibleSig.width(signatureImageParameters.getWidth());
@@ -356,6 +359,12 @@ class PdfBoxSignatureService implements PDFSignatureService {
 				visibleSig.width(ires.toXPoint(visibleSig.getWidth()));
 				visibleSig.height(ires.toYPoint(visibleSig.getHeight()));
 			}
+			
+
+			PDPage page = doc.getPage(signatureImageParameters.getPage() - 1);
+			visibleSig.xAxis(signatureImageAndPosition.getX());
+			visibleSig.yAxis(page.getCropBox().getHeight() - signatureImageAndPosition.getY() - visibleSig.getHeight());
+			
 			visibleSig.zoom(signatureImageParameters.getZoom() - 100); // pdfbox is 0 based
 
 			PDVisibleSigProperties signatureProperties = new PDVisibleSigProperties();
@@ -817,5 +826,10 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		public byte[] getFullOutput() {
 			return ((ByteArrayOutputStream) getOutput()).toByteArray();
 		}
+	}
+
+	@Override
+	public void setPdfSignatureImageDir(File dir) {
+		pdfSignatureImageDir = dir;
 	}
 }

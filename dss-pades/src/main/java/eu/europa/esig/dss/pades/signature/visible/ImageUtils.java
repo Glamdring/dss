@@ -8,6 +8,7 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -45,6 +46,7 @@ import org.w3c.dom.NodeList;
 
 import eu.europa.esig.dss.DSSDocument;
 import eu.europa.esig.dss.DSSException;
+import eu.europa.esig.dss.FileDocument;
 import eu.europa.esig.dss.InMemoryDocument;
 import eu.europa.esig.dss.MimeType;
 import eu.europa.esig.dss.SignatureImageParameters;
@@ -77,15 +79,19 @@ public class ImageUtils {
 	private ImageUtils() {
 	}
 	
-	public static ImageAndResolution create(final SignatureImageParameters imageParameters, CertificateToken signingCertificate, Date signingDate) throws IOException {
+	public static ImageAndResolution create(final SignatureImageParameters imageParameters, CertificateToken signingCertificate, Date signingDate, File signatureImageDir) throws IOException {
 		SignatureImageTextParameters textLeftParameters = imageParameters.getTextParameters();
 		
 		// the image can be specified either as a DSSDocument or as RemoteDocument. In the latter case, we convert it
 		DSSDocument image = imageParameters.getImage();
 		if (image == null && imageParameters.getImageDocument() != null) {
-			image = new InMemoryDocument(imageParameters.getImageDocument().getBytes(), 
-					imageParameters.getImageDocument().getName(), 
-					imageParameters.getImageDocument().getMimeType());
+			if (imageParameters.getImageDocument().getBytes() != null) {
+				image = new InMemoryDocument(imageParameters.getImageDocument().getBytes(), 
+						imageParameters.getImageDocument().getName(), 
+						imageParameters.getImageDocument().getMimeType());
+			} else if (signatureImageDir != null){
+				image = new FileDocument(new File(signatureImageDir, imageParameters.getImageDocument().getName()));
+			}
 		}
 		
 		if (textLeftParameters != null && Utils.isStringNotEmpty(textLeftParameters.getText())) {

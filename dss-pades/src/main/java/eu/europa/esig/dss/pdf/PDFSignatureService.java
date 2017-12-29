@@ -20,6 +20,7 @@
  */
 package eu.europa.esig.dss.pdf;
 
+import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.SignatureException;
@@ -100,4 +101,12 @@ public interface PDFSignatureService {
 	 */
 	DSSDocument addNewSignatureField(DSSDocument document, SignatureFieldParameters parameters);
 
+	/**
+	 * PDF signature images can be passed as DDSDocument, as a full RemoteDocument
+	 * or just as a filename, which is loaded from the file system. This method sets
+	 * the directory for the latter option
+	 * 
+	 * @param dir
+	 */
+	void setPdfSignatureImageDir(File dir);
 }
