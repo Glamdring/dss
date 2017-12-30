@@ -41,6 +41,8 @@ public class RemoteSignatureParameters extends AbstractSerializableSignaturePara
 
 	private SignatureImageParameters signatureImageParameters;
 	
+	private SignatureImageParameters stampImageParameters;
+	
 	public RemoteSignatureParameters() {
 	}
 
@@ -83,4 +85,12 @@ public class RemoteSignatureParameters extends AbstractSerializableSignaturePara
 	public void setSignatureImageParameters(SignatureImageParameters signatureImageParameters) {
 		this.signatureImageParameters = signatureImageParameters;
 	}
+
+    public SignatureImageParameters getStampImageParameters() {
+        return stampImageParameters;
+    }
+
+    public void setStampImageParameters(SignatureImageParameters stampImageParameters) {
+        this.stampImageParameters = stampImageParameters;
+    }
 }

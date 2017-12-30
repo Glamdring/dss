@@ -31,5 +31,10 @@
     	<groupId>eu.europa.ec.joinup.sd-dss</groupId>
   		<artifactId>dss-asic-xades</artifactId>
   	</dependency>
+  	<dependency>
+	    <groupId>com.logsentinel</groupId>
+	    <artifactId>logsentinel-java-client</artifactId>
+	    <version>0.0.2</version>
+	</dependency>
   </dependencies>
 </project>

@@ -54,7 +54,7 @@ public class RemoteDocumentSignatureServiceImpl extends AbstractRemoteSignatureS
 	private DocumentSignatureService<ASiCWithXAdESSignatureParameters> asicWithXAdESService;
 
 	private DocumentSignatureService<ASiCWithCAdESSignatureParameters> asicWithCAdESService;
-
+	
 	public void setXadesService(DocumentSignatureService<XAdESSignatureParameters> xadesService) {
 		this.xadesService = xadesService;
 	}
@@ -74,7 +74,7 @@ public class RemoteDocumentSignatureServiceImpl extends AbstractRemoteSignatureS
 	public void setAsicWithCAdESService(DocumentSignatureService<ASiCWithCAdESSignatureParameters> asicWithCAdESService) {
 		this.asicWithCAdESService = asicWithCAdESService;
 	}
-
+	
 	@SuppressWarnings("rawtypes")
 	private DocumentSignatureService getServiceForSignature(RemoteSignatureParameters parameters) {
 		ASiCContainerType asicContainerType = parameters.getAsicContainerType();
@@ -125,6 +125,7 @@ public class RemoteDocumentSignatureServiceImpl extends AbstractRemoteSignatureS
 		DSSDocument dssDocument = createDSSDocument(remoteDocument);
 		DSSDocument signDocument = service.signDocument(dssDocument, parameters, signatureValue);
 		LOG.info("SignDocument is finished");
+		logSigningRequest(signDocument, remoteParameters);
 		return signDocument;
 	}
 
