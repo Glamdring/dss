@@ -52,9 +52,9 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		assertThat(result.getPage(1).getAnnotations().size(), equalTo(3));
 		assertThat(result.getPage(2).getAnnotations().size(), equalTo(1));
 		// commented-out piece for manual testing
-		try (FileOutputStream fos = new FileOutputStream("c:\\tmp\\out.pdf")) {
-			IOUtils.copy(signedDocument.openStream(), fos);
-		}
+//		try (FileOutputStream fos = new FileOutputStream("c:\\tmp\\out.pdf")) {
+//			IOUtils.copy(signedDocument.openStream(), fos);
+//		}
 	}
 
 	@Test
@@ -71,9 +71,9 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		assertThat(twiceSigned.getSignatureFields().size(), equalTo(6)); // two for signatures and 2*2 for timestamps
 		
 		// commented-out piece for manual testing
-		try (FileOutputStream fos = new FileOutputStream("c:\\tmp\\out-twice.pdf")) {
-			IOUtils.copy(twiceSignedDocument.openStream(), fos);
-		}
+//		try (FileOutputStream fos = new FileOutputStream("c:\\tmp\\out-twice.pdf")) {
+//			IOUtils.copy(twiceSignedDocument.openStream(), fos);
+//		}
 	}
 	
 	private DSSDocument signDocumentWithStamps(DSSDocument document, DSSDocument image) {
