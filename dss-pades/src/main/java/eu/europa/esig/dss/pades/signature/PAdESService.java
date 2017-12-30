@@ -104,6 +104,7 @@ public class PAdESService extends AbstractSignatureService<PAdESSignatureParamet
 		final CustomContentSigner customContentSigner = new CustomContentSigner(signatureAlgorithm.getJCEId());
 
 		final PDFSignatureService pdfSignatureService = PdfObjFactory.getInstance().newPAdESSignatureService();
+		pdfSignatureService.setPdfSignatureImageDir(signatureImageDir);
 		final InputStream inputStream = toSignDocument.openStream();
 		final byte[] messageDigest = pdfSignatureService.digest(inputStream, parameters, parameters.getDigestAlgorithm());
 		Utils.closeQuietly(inputStream);
@@ -131,6 +132,7 @@ public class PAdESService extends AbstractSignatureService<PAdESSignatureParamet
 		final CustomContentSigner customContentSigner = new CustomContentSigner(signatureAlgorithm.getJCEId(), signatureValue.getValue());
 
 		final PDFSignatureService pdfSignatureService = PdfObjFactory.getInstance().newPAdESSignatureService();
+		pdfSignatureService.setPdfSignatureImageDir(signatureImageDir);
 		InputStream inputStream = toSignDocument.openStream();
 		final byte[] messageDigest = pdfSignatureService.digest(inputStream, parameters, parameters.getDigestAlgorithm());
 		Utils.closeQuietly(inputStream);

@@ -163,6 +163,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 				
 				writer.write(pdDocument);
 			}
+			pdDocument.close();
 			pdDocument = PDDocument.load(baos.toByteArray());
 		}
 		return pdDocument;

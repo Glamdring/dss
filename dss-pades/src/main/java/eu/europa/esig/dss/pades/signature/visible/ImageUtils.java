@@ -102,7 +102,7 @@ public class ImageUtils {
 				if (imageParameters.getTextRightParameters() != null) {
 					textBackground = new Color(255, 255, 255, 0);
 				} else {
-					textBackground = new Color(255, 255, 255, 100);
+					textBackground = new Color(255, 255, 255, imageParameters.getBackgroundOpacity());
 				}
 			}
 			
@@ -117,7 +117,9 @@ public class ImageUtils {
 				BufferedImage rightImg = ImageTextWriter.createTextImage(transformedRightText, textRightParameters.getFont(), textRightParameters.getTextColor(),
 						textBackground, getDpi(imageParameters.getDpi()), textRightParameters.getSignerTextHorizontalAlignment());
 				
-				buffImg = ImagesMerger.mergeOnRight(buffImg, rightImg, new Color(255, 255, 255, 100), imageParameters.getSignerTextImageVerticalAlignment());
+				buffImg = ImagesMerger.mergeOnRight(buffImg, rightImg, 
+						new Color(255, 255, 255, imageParameters.getBackgroundOpacity()), 
+						imageParameters.getSignerTextImageVerticalAlignment());
 			}
 			
 			if (image != null) {

@@ -87,7 +87,7 @@ public class SignatureImageTextParameters {
 	 */
 	@XmlJavaTypeAdapter(ColorAdapter.class)
 	private Color backgroundColor = DEFAULT_BACKGROUND_COLOR;
-
+	
 	public SignerPosition getSignerNamePosition() {
 		return signerNamePosition;
 	}
@@ -135,5 +135,4 @@ public class SignatureImageTextParameters {
 	public void setText(String text) {
 		this.text = text;
 	}
-
 }

@@ -24,6 +24,7 @@ import java.awt.Color;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
@@ -32,6 +33,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  *
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@XmlRootElement
 public class SignatureImageParameters {
 
 	public static final int DEFAULT_PAGE = 1;
@@ -221,6 +223,13 @@ public class SignatureImageParameters {
     
     private String dateFormat = "dd.MM.yyyy HH:mm ZZZ";
     
+    
+    /**
+     * How opaque should the background image be in case the image is placed in the background.
+     * 0 = fully transparent, 255 = fully opaque
+     */
+    private int backgroundOpacity;
+    
 	public DSSDocument getImage() {
 		return image;
 	}
@@ -371,5 +380,13 @@ public class SignatureImageParameters {
 
     public void setDateFormat(String dateFormat) {
         this.dateFormat = dateFormat;
+    }
+
+    public int getBackgroundOpacity() {
+        return backgroundOpacity;
+    }
+
+    public void setBackgroundOpacity(int backgroundOpacity) {
+        this.backgroundOpacity = backgroundOpacity;
     }
 }
