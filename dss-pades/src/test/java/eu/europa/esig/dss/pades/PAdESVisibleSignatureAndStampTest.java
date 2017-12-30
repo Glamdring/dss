@@ -6,6 +6,7 @@ import static org.junit.Assert.assertThat;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
@@ -23,6 +24,7 @@ import eu.europa.esig.dss.SignatureImageParameters.VisualSignaturePagePlacement;
 import eu.europa.esig.dss.SignatureImageTextParameters;
 import eu.europa.esig.dss.SignatureImageTextParameters.SignerPosition;
 import eu.europa.esig.dss.SignatureLevel;
+import eu.europa.esig.dss.SignaturePackaging;
 import eu.europa.esig.dss.SignatureValue;
 import eu.europa.esig.dss.ToBeSigned;
 import eu.europa.esig.dss.pades.signature.PAdESService;
@@ -50,9 +52,9 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		assertThat(result.getPage(1).getAnnotations().size(), equalTo(3));
 		assertThat(result.getPage(2).getAnnotations().size(), equalTo(1));
 		// commented-out piece for manual testing
-//		try (FileOutputStream fos = new FileOutputStream("c:\\tmp\\out.pdf")) {
-//			IOUtils.copy(signedDocument.openStream(), fos);
-//		}
+		try (FileOutputStream fos = new FileOutputStream("c:\\tmp\\out.pdf")) {
+			IOUtils.copy(signedDocument.openStream(), fos);
+		}
 	}
 
 	@Test
@@ -66,12 +68,12 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		DSSDocument twiceSignedDocument = signDocumentWithStamps(signedDocument, image);
 
 		PDDocument twiceSigned = PDDocument.load(twiceSignedDocument.openStream());
-		assertThat(twiceSigned.getSignatureFields().size(), equalTo(2));
+		assertThat(twiceSigned.getSignatureFields().size(), equalTo(6)); // two for signatures and 2*2 for timestamps
 		
 		// commented-out piece for manual testing
-//		try (FileOutputStream fos = new FileOutputStream("c:\\tmp\\out-twice.pdf")) {
-//			IOUtils.copy(twiceSignedDocument.openStream(), fos);
-//		}
+		try (FileOutputStream fos = new FileOutputStream("c:\\tmp\\out-twice.pdf")) {
+			IOUtils.copy(twiceSignedDocument.openStream(), fos);
+		}
 	}
 	
 	private DSSDocument signDocumentWithStamps(DSSDocument document, DSSDocument image) {
@@ -111,11 +113,12 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		params.bLevel().setSigningDate(new Date());
 		params.setSigningCertificate(getSigningCert());
 		params.setCertificateChain(getCertificateChain());
-		params.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
+		params.setSignatureLevel(SignatureLevel.PAdES_BASELINE_LTA);
+		params.setSignaturePackaging(SignaturePackaging.ENVELOPING);
 		params.setDigestAlgorithm(DigestAlgorithm.SHA512);
 
 		PAdESService service = new PAdESService(new CommonCertificateVerifier());
-
+		service.setTspSource(getGoodTsa());
 		ToBeSigned dataToSign = service.getDataToSign(document, params);
 		SignatureValue signatureValue = getToken().sign(dataToSign, params.getDigestAlgorithm(), getPrivateKeyEntry());
 		DSSDocument signedDocument = service.signDocument(document, params, signatureValue);

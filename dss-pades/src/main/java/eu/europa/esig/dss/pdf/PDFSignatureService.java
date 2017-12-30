@@ -48,10 +48,12 @@ public interface PDFSignatureService {
 	 * @param digestAlgorithm
 	 * @param extraDictionariesToAddBeforeSign
 	 *            only in the case of timestamp
+	 * @param timestamping whether the currenet digest is needed for timestamping
+	 *             
 	 * @return
 	 * @throws DSSException
 	 */
-	byte[] digest(final InputStream toSignDocument, final PAdESSignatureParameters parameters, final DigestAlgorithm digestAlgorithm) throws DSSException;
+	byte[] digest(final InputStream toSignDocument, final PAdESSignatureParameters parameters, final DigestAlgorithm digestAlgorithm, boolean timestamping) throws DSSException;
 
 	/**
 	 * Signs a PDF document
@@ -62,10 +64,11 @@ public interface PDFSignatureService {
 	 * @param parameters
 	 * @param digestAlgorithm
 	 * @param extraDictionariesToAddBeforeSign
+	 * @param timestamping
 	 * @throws DSSException
 	 */
 	void sign(final InputStream pdfData, final byte[] signatureValue, final OutputStream signedStream, final PAdESSignatureParameters parameters,
-			final DigestAlgorithm digestAlgorithm) throws DSSException;
+			final DigestAlgorithm digestAlgorithm, boolean timestamping) throws DSSException;
 
 	/**
 	 * Retrieves and triggers validation of the signatures from a PDF document

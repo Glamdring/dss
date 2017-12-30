@@ -75,12 +75,12 @@ class PdfBoxDocTimeStampService extends PdfBoxSignatureService implements PDFSig
 
 		final DigestAlgorithm timestampDigestAlgorithm = parameters.getSignatureTimestampParameters().getDigestAlgorithm();
 		InputStream inputStream = document.openStream();
-		final byte[] digest = digest(inputStream, parameters, timestampDigestAlgorithm);
+		final byte[] digest = digest(inputStream, parameters, timestampDigestAlgorithm, true);
 		Utils.closeQuietly(inputStream);
 		final TimeStampToken timeStampToken = tspSource.getTimeStampResponse(timestampDigestAlgorithm, digest);
 		final byte[] encoded = DSSASN1Utils.getEncoded(timeStampToken);
 		inputStream = document.openStream();
-		sign(inputStream, encoded, signedStream, parameters, timestampDigestAlgorithm);
+		sign(inputStream, encoded, signedStream, parameters, timestampDigestAlgorithm, true);
 		Utils.closeQuietly(inputStream);
 	}
 

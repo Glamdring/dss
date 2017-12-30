@@ -113,13 +113,17 @@ class PdfBoxSignatureService implements PDFSignatureService {
 	
 	@Override
 	public byte[] digest(final InputStream toSignDocument, final PAdESSignatureParameters parameters,
-			final DigestAlgorithm digestAlgorithm) throws DSSException {
+			final DigestAlgorithm digestAlgorithm, boolean timestamping) throws DSSException {
 
 		final byte[] signatureValue = DSSUtils.EMPTY_BYTE_ARRAY;
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		PDDocument pdDocument = null;
 		try {
-			pdDocument = loadAndStampDocument(toSignDocument, parameters);
+			if (!timestamping) {
+				pdDocument = loadAndStampDocument(toSignDocument, parameters);
+			} else {
+				pdDocument = PDDocument.load(toSignDocument);
+			}
 			PDSignature pdSignature = createSignatureDictionary(parameters, pdDocument);
 
 			return signDocumentAndReturnDigest(parameters, signatureValue, outputStream, pdDocument, pdSignature, digestAlgorithm);
@@ -133,11 +137,15 @@ class PdfBoxSignatureService implements PDFSignatureService {
 
 	@Override
 	public void sign(final InputStream pdfData, final byte[] signatureValue, final OutputStream signedStream,
-			final PAdESSignatureParameters parameters, final DigestAlgorithm digestAlgorithm) throws DSSException {
+			final PAdESSignatureParameters parameters, final DigestAlgorithm digestAlgorithm, boolean timestamping) throws DSSException {
 
 		PDDocument pdDocument = null;
 		try {
-			pdDocument = loadAndStampDocument(pdfData, parameters);
+			if (!timestamping) {
+				pdDocument = loadAndStampDocument(pdfData, parameters);
+			} else {
+				pdDocument = PDDocument.load(pdfData);
+			}
 			final PDSignature pdSignature = createSignatureDictionary(parameters, pdDocument);
 			signDocumentAndReturnDigest(parameters, signatureValue, signedStream, pdDocument, pdSignature,
 					digestAlgorithm);
