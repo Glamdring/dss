@@ -38,7 +38,7 @@ To pass these parameters from the demo app, XML can be entered into the two resp
    <textRightParameters>
       <signerNamePosition>FOREGROUND</signerNamePosition>
       <signerTextHorizontalAlignment>LEFT</signerTextHorizontalAlignment>
-      <text>Signature created byTestDate: %DateTimeWithTimeZone%</text>
+      <text>Signature created by&#xA;Test provider&#xA;Date: %DateTimeWithTimeZone%</text>
       <font>
          <name>helvetica</name>
          <size>15</size>
