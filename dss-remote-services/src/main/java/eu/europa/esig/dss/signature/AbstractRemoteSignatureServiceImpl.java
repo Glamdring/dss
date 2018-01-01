@@ -12,7 +12,7 @@ import javax.naming.ldap.Rdn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.logsentinel.ApiCallback;
+import com.logsentinel.ApiCallbackAdapter;
 import com.logsentinel.ApiException;
 import com.logsentinel.LogSentinelClient;
 import com.logsentinel.client.model.ActionData;
@@ -184,23 +184,10 @@ public class AbstractRemoteSignatureServiceImpl {
 	    action.setEntryType(AuditLogEntryType.BUSINESS_LOGIC_ENTRY);
 	    
 	    try {
-            logSentinelClient.getAuditLogActions().logAsync(actor, action, new ApiCallback<LogResponse>() {
-                
-                @Override
-                public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {
-                }
-                
-                @Override
-                public void onSuccess(LogResponse result, int statusCode, Map<String, List<String>> responseHeaders) {
-                }
-                
+            logSentinelClient.getAuditLogActions().logAsync(actor, action, new ApiCallbackAdapter<LogResponse>() {
                 @Override
                 public void onFailure(ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
                     LOG.error("Failed to log request", e);
-                }
-                
-                @Override
-                public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
                 }
             });
         } catch (ApiException e) {
