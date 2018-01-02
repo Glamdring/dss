@@ -45,7 +45,7 @@ To pass these parameters from the demo app, XML can be entered into the two resp
          <type>NORMAL</type>
       </font>
    </textRightParameters>
-   <dateFormat>dd.MM.yyyy HH:mm ZZZ</dateFormat>
+   <dateFormat>dd.MM.yyyy HH:mm XXX</dateFormat>
 </signatureImageParameters> 
 ```
 
