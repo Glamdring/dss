@@ -210,6 +210,15 @@ class PdfBoxSignatureService implements PDFSignatureService {
 							signatureParameters.bLevel().getSigningDate(),
 							pdfSignatureImageDir);
 					
+					// calculate height based on width and ratio and vice versa
+					if (parameters.getWidth() != 0 && parameters.getHeight() == 0 && ires.getRatio() != 0) {
+						parameters.setHeight((int) (parameters.getWidth() / ires.getRatio()));
+					}
+					
+					if (parameters.getWidth() == 0 && parameters.getHeight() != 0 && ires.getRatio() != 0) {
+						parameters.setWidth((int) (parameters.getHeight() * ires.getRatio()));
+					}
+					
 					SignatureImageAndPosition position = SignatureImageAndPositionProcessor.process(
 							parameters, pdDocument,	ires, getPage(parameters.getPage(), pdDocument.getNumberOfPages()));
 	
@@ -373,7 +382,16 @@ class PdfBoxSignatureService implements PDFSignatureService {
 					getPage(signatureImageParameters.getPage(), doc.getNumberOfPages()) + 1);
 
 
-			if ((signatureImageParameters.getWidth() != 0) && (signatureImageParameters.getHeight() != 0)) {
+			// calculate height based on width and ratio and vice versa
+			if (signatureImageParameters.getWidth() != 0 && signatureImageParameters.getHeight() == 0 && ires.getRatio() != 0) {
+				signatureImageParameters.setHeight((int) (signatureImageParameters.getWidth() / ires.getRatio()));
+			}
+			
+			if (signatureImageParameters.getWidth() == 0 && signatureImageParameters.getHeight() != 0 && ires.getRatio() != 0) {
+				signatureImageParameters.setWidth((int) (signatureImageParameters.getHeight() * ires.getRatio()));
+			}
+			
+			if (signatureImageParameters.getWidth() != 0 && signatureImageParameters.getHeight() != 0) {
 				visibleSig.width(signatureImageParameters.getWidth());
 				visibleSig.height(signatureImageParameters.getHeight());
 			} else {

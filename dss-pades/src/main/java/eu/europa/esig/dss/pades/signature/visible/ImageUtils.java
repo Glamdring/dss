@@ -149,7 +149,9 @@ public class ImageUtils {
 					}
 				}
 			}
-			return convertToInputStream(buffImg, getDpi(imageParameters.getDpi()));
+			ImageAndResolution result = convertToInputStream(buffImg, getDpi(imageParameters.getDpi()));
+			result.setRatio(buffImg.getWidth() / buffImg.getHeight());
+			return result;
 		}
 
 		// Image only

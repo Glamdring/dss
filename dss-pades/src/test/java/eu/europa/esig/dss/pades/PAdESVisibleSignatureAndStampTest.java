@@ -6,7 +6,6 @@ import static org.junit.Assert.assertThat;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -54,9 +53,9 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		assertThat(result.getPage(1).getAnnotations().size(), equalTo(3));
 		assertThat(result.getPage(2).getAnnotations().size(), equalTo(1));
 		// commented-out piece for manual testing
-		try (FileOutputStream fos = new FileOutputStream("c:\\tmp\\out.pdf")) {
-			IOUtils.copy(signedDocument.openStream(), fos);
-		}
+//		try (FileOutputStream fos = new FileOutputStream("c:\\tmp\\out.pdf")) {
+//			IOUtils.copy(signedDocument.openStream(), fos);
+//		}
 	}
 
 	@Test
@@ -94,16 +93,14 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		params.getSignatureImageParameters().setPageRange(new SignatureImagePageRange());
 		params.getSignatureImageParameters().setxAxis(25);
 		params.getSignatureImageParameters().setyAxis(15);
-		params.getSignatureImageParameters().setWidth(100);
-		params.getSignatureImageParameters().setHeight(30);
+		params.getSignatureImageParameters().setWidth(200);
 		params.getSignatureImageParameters().setPagePlacement(VisualSignaturePagePlacement.SINGLE_PAGE);
 		params.getSignatureImageParameters().setPage(-1);
 		
 		SignatureImageParameters stampParams = new SignatureImageParameters();
 		stampParams.setImage(image);
 		stampParams.setTextParameters(new SignatureImageTextParameters());
-		//stampParams.getTextParameters().setText("%CN_1%\n%CN_2%");
-		stampParams.getTextParameters().setText("Bozhidar\nPlamenovtestsets\nBozhanov");
+		stampParams.getTextParameters().setText("%CN_1%\n%CN_2%");
 		stampParams.getTextParameters().setRightPadding(30);
 		stampParams.getTextParameters().setSignerTextHorizontalAlignment(SignerTextHorizontalAlignment.RIGHT);
 		stampParams.getTextParameters().setSignerNamePosition(SignerPosition.FOREGROUND);
@@ -112,8 +109,7 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		stampParams.setPageRange(new SignatureImagePageRange());
 		stampParams.setxAxis(25);
 		stampParams.setyAxis(15);
-		stampParams.setWidth(100);
-		stampParams.setHeight(30);
+		stampParams.setWidth(200);
 		stampParams.setPagePlacement(VisualSignaturePagePlacement.RANGE);
 		stampParams.getPageRange().setPages(Arrays.asList(1, 2));
 		
