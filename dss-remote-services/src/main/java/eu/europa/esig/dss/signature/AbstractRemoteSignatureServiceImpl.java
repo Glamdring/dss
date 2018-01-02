@@ -180,7 +180,9 @@ public class AbstractRemoteSignatureServiceImpl {
 	    ActionData action = new ActionData(document.getDigest(params.getDigestAlgorithm()));
 	    action.setAction("SIGN");
 	    action.setEntityType("DOCUMENT");
-	    action.setEntityId(document.getName());
+	    if (document.getName() != null) {
+	        action.setEntityId(document.getName().replaceAll(".pdf", ""));
+	    }
 	    action.setEntryType(AuditLogEntryType.BUSINESS_LOGIC_ENTRY);
 	    
 	    try {
