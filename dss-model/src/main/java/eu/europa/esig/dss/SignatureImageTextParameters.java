@@ -88,6 +88,12 @@ public class SignatureImageTextParameters {
 	@XmlJavaTypeAdapter(ColorAdapter.class)
 	private Color backgroundColor = DEFAULT_BACKGROUND_COLOR;
 	
+	
+	/**
+	 * This variable defines the padding on the right of the text image
+	 */
+	private int rightPadding;
+	
 	public SignerPosition getSignerNamePosition() {
 		return signerNamePosition;
 	}
@@ -135,4 +141,12 @@ public class SignatureImageTextParameters {
 	public void setText(String text) {
 		this.text = text;
 	}
+
+    public int getRightPadding() {
+        return rightPadding;
+    }
+
+    public void setRightPadding(int rightPadding) {
+        this.rightPadding = rightPadding;
+    }
 }

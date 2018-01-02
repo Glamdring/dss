@@ -108,14 +108,14 @@ public class ImageUtils {
 			
 			String transformedText = transformText(textLeftParameters.getText(), imageParameters.getDateFormat(), signingDate, signingCertificate);
 			BufferedImage buffImg = ImageTextWriter.createTextImage(transformedText, textLeftParameters.getFont(), textLeftParameters.getTextColor(),
-					textBackground, getDpi(imageParameters.getDpi()), textLeftParameters.getSignerTextHorizontalAlignment());
+					textBackground, getDpi(imageParameters.getDpi()), textLeftParameters.getSignerTextHorizontalAlignment(), textLeftParameters.getRightPadding());
 			
 			// in case there's a right side configured, join it with the left side of the text to form a single text image
 			SignatureImageTextParameters textRightParameters = imageParameters.getTextRightParameters();
 			if (textRightParameters != null) {
 				String transformedRightText = transformText(textRightParameters.getText(), imageParameters.getDateFormat(), signingDate, signingCertificate);
 				BufferedImage rightImg = ImageTextWriter.createTextImage(transformedRightText, textRightParameters.getFont(), textRightParameters.getTextColor(),
-						textBackground, getDpi(imageParameters.getDpi()), textRightParameters.getSignerTextHorizontalAlignment());
+						textBackground, getDpi(imageParameters.getDpi()), textRightParameters.getSignerTextHorizontalAlignment(), 0);
 				
 				buffImg = ImagesMerger.mergeOnRight(buffImg, rightImg, 
 						new Color(255, 255, 255, imageParameters.getBackgroundOpacity()), 
