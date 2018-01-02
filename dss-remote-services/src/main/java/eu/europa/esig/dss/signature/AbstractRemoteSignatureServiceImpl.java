@@ -3,6 +3,22 @@ package eu.europa.esig.dss.signature;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+
+import javax.naming.InvalidNameException;
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.logsentinel.ApiCallbackAdapter;
+import com.logsentinel.ApiException;
+import com.logsentinel.LogSentinelClient;
+import com.logsentinel.client.model.ActionData;
+import com.logsentinel.client.model.ActorData;
+import com.logsentinel.client.model.AuditLogEntryType;
+import com.logsentinel.client.model.LogResponse;
 
 import eu.europa.esig.dss.ASiCContainerType;
 import eu.europa.esig.dss.AbstractSignatureParameters;
@@ -24,6 +40,10 @@ import eu.europa.esig.dss.xades.XAdESSignatureParameters;
 
 public class AbstractRemoteSignatureServiceImpl {
 
+    private LogSentinelClient logSentinelClient;
+    
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractRemoteSignatureServiceImpl.class);
+    
 	protected AbstractSignatureParameters getASiCSignatureParameters(AbstractSignatureParameters parameters, ASiCContainerType asicContainerType,
 			SignatureForm signatureForm) {
 		switch (signatureForm) {
@@ -57,6 +77,7 @@ public class AbstractRemoteSignatureServiceImpl {
 			case PAdES:
 				PAdESSignatureParameters padesParams = new PAdESSignatureParameters();
 				padesParams.setSignatureImageParameters(remoteParameters.getSignatureImageParameters());
+				padesParams.setStampImageParameters(remoteParameters.getStampImageParameters());
 				padesParams.setSignatureSize(9472 * 2); // double reserved space for signature
 				parameters = padesParams;
 				break;
@@ -121,6 +142,59 @@ public class AbstractRemoteSignatureServiceImpl {
 			return dssDocument;
 		}
 		return null;
+	}
+	
+	public void setLogSentinelClient(LogSentinelClient logSentinelClient) {
+        this.logSentinelClient = logSentinelClient;
+    }
+    
+	/**
+	 * Send audit trail information to the LogSentinel audit trail service for secure storing
+	 * 
+	 * @param document
+	 * @param params
+	 */
+	protected void logSigningRequest(DSSDocument document, RemoteSignatureParameters params) {
+	    if (logSentinelClient == null) {
+	        return;
+	    }
+	    
+	    CertificateToken loadCertificate = DSSUtils.loadCertificate(params.getSigningCertificate().getEncodedCertificate());
+	    
+	    String principal = loadCertificate.getSubjectX500Principal().getName().replace("+", ",");
+        LdapName ldapName;
+        try {
+            ldapName = new LdapName(principal);
+        } catch (InvalidNameException ex) {
+            throw new DSSException(ex);
+        }
+        String signerNames = ldapName.getRdns().stream()
+                .filter(rdn -> rdn.getType().equals("CN"))
+                .map(Rdn::getValue)
+                .map(String.class::cast)
+                .findFirst().orElse("");
+                
+	    ActorData actor = new ActorData(loadCertificate.getCertificate().getSerialNumber().toString());
+	    actor.setActorDisplayName(signerNames);
+	    
+	    ActionData action = new ActionData(document.getDigest(params.getDigestAlgorithm()));
+	    action.setAction("SIGN");
+	    action.setEntityType("DOCUMENT");
+	    if (document.getName() != null) {
+	        action.setEntityId(document.getName().replaceAll(".pdf", ""));
+	    }
+	    action.setEntryType(AuditLogEntryType.BUSINESS_LOGIC_ENTRY);
+	    
+	    try {
+            logSentinelClient.getAuditLogActions().logAsync(actor, action, new ApiCallbackAdapter<LogResponse>() {
+                @Override
+                public void onFailure(ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
+                    LOG.error("Failed to log request", e);
+                }
+            });
+        } catch (ApiException e) {
+            LOG.error("Failed to log request", e);
+        }
 	}
 
 }

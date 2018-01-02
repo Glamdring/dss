@@ -200,33 +200,35 @@ class PdfBoxSignatureService implements PDFSignatureService {
 			throws FileNotFoundException, IOException {
 		int totalPages = pdDocument.getNumberOfPages();
 		List<PDAnnotation> result = new ArrayList<>();
-		SignatureImageParameters parameters = signatureParameters.getStampImageParameters();
+		List<SignatureImageParameters> parametersList = signatureParameters.getStampImageParameters();
 		for (int page = 0; page < totalPages; page++) {
-			if (parameters != null && placeSignatureOnPage(page, totalPages, parameters)) {
-
-				ImageAndResolution ires = ImageUtils.create(parameters, 
-						signatureParameters.getSigningCertificate(), 
-						signatureParameters.bLevel().getSigningDate(),
-						pdfSignatureImageDir);
-				
-				SignatureImageAndPosition position = SignatureImageAndPositionProcessor.process(
-						parameters, pdDocument,	ires, getPage(parameters.getPage(), pdDocument.getNumberOfPages()));
-
-				PDRectangle rect = new PDRectangle(position.getX(), position.getY(), parameters.getWidth(),
-						parameters.getHeight());
-				
-				PDAnnotationLink link = addLink(pdDocument, page, rect);
-				PDAnnotationRubberStamp stamp = createStamp(pdDocument, page, rect, position.getSignatureImage());
-				PDAnnotationPopup popup = addPopup(pdDocument, page, rect, stamp);
-				stamp.setPopup(popup);
-				
-				pdDocument.getPage(page).getAnnotations().add(stamp);
-				
-				pdDocument.getPage(page).getCOSObject().setNeedToBeUpdated(true);
-				
-				result.add(stamp);
-				result.add(popup);
-				result.add(link);
+			for (SignatureImageParameters parameters : parametersList) {
+				if (parameters != null && placeSignatureOnPage(page, totalPages, parameters)) {
+	
+					ImageAndResolution ires = ImageUtils.create(parameters, 
+							signatureParameters.getSigningCertificate(), 
+							signatureParameters.bLevel().getSigningDate(),
+							pdfSignatureImageDir);
+					
+					SignatureImageAndPosition position = SignatureImageAndPositionProcessor.process(
+							parameters, pdDocument,	ires, getPage(parameters.getPage(), pdDocument.getNumberOfPages()));
+	
+					PDRectangle rect = new PDRectangle(position.getX(), position.getY(), parameters.getWidth(),
+							parameters.getHeight());
+					
+					PDAnnotationLink link = addLink(pdDocument, page, rect);
+					PDAnnotationRubberStamp stamp = createStamp(pdDocument, page, rect, position.getSignatureImage());
+					PDAnnotationPopup popup = addPopup(pdDocument, page, rect, stamp);
+					stamp.setPopup(popup);
+					
+					pdDocument.getPage(page).getAnnotations().add(stamp);
+					
+					pdDocument.getPage(page).getCOSObject().setNeedToBeUpdated(true);
+					
+					result.add(stamp);
+					result.add(popup);
+					result.add(link);
+				}
 			}
 		}
 		return result;

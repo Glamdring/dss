@@ -221,7 +221,7 @@ public class SignatureImageParameters {
     private SignatureImageTextParameters textRightParameters;
     
     
-    private String dateFormat = "dd.MM.yyyy HH:mm ZZZ";
+    private String dateFormat = "dd.MM.yyyy HH:mm XXX";
     
     
     /**

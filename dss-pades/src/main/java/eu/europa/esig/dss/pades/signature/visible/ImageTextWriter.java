@@ -48,12 +48,12 @@ public final class ImageTextWriter {
 	}
 
 	public static BufferedImage createTextImage(final String text, final Font font, final Color textColor, final Color bgColor, final int dpi,
-			SignatureImageTextParameters.SignerTextHorizontalAlignment horizontalAlignment) {
+			SignatureImageTextParameters.SignerTextHorizontalAlignment horizontalAlignment, final int rightPadding) {
 		// Computing image size depending of the font
 		float fontSize = Math.round((font.getSize() * dpi) / (float) PDF_DEFAULT_DPI);
 		Font largerFont = font.deriveFont(fontSize);
 		Dimension dimension = computeSize(largerFont, text);
-		return createTextImage(text, largerFont, textColor, bgColor, dimension.width, dimension.height, horizontalAlignment);
+		return createTextImage(text, largerFont, textColor, bgColor, dimension.width, dimension.height, horizontalAlignment, rightPadding);
 	}
 
 	public static Dimension computeSize(Font font, String text) {
@@ -80,7 +80,7 @@ public final class ImageTextWriter {
 	}
 
 	private static BufferedImage createTextImage(final String text, final Font font, final Color textColor, final Color bgColor, final int width,
-			final int height, SignatureImageTextParameters.SignerTextHorizontalAlignment horizontalAlignment) {
+			final int height, SignatureImageTextParameters.SignerTextHorizontalAlignment horizontalAlignment, final int rightPadding) {
 		String[] lines = text.split("\n");
 
 		int imageType;
@@ -91,7 +91,7 @@ public final class ImageTextWriter {
 			imageType = BufferedImage.TYPE_INT_RGB;
 		}
 
-		BufferedImage img = new BufferedImage(width, height, imageType);
+		BufferedImage img = new BufferedImage(width + rightPadding, height, imageType);
 		Graphics2D g = img.createGraphics();
 		g.setFont(font);
 		FontMetrics fm = g.getFontMetrics(font);
@@ -120,7 +120,7 @@ public final class ImageTextWriter {
 			if (horizontalAlignment != null) {
 				switch (horizontalAlignment) {
 				case RIGHT:
-					x = (img.getWidth() - fm.stringWidth(line)) / 2;
+					x = (img.getWidth() - fm.stringWidth(line) - rightPadding);
 					break;
 				case CENTER:
 					x = img.getWidth() / 2 - fm.stringWidth(line) / 2;
