@@ -252,7 +252,6 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		popup.setPrinted(true);
 		popup.setPage(pdDocument.getPage(page));
 		popup.getCOSObject().setNeedToBeUpdated(true);
-		popup.setAnnotationName("SignaturePopup");
 		pdDocument.getPage(page).getAnnotations().add(popup);
 		return popup;
 	}
@@ -268,7 +267,6 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		link.setBorderStyle(new PDBorderStyleDictionary());
 		link.getBorderStyle().setWidth(0);
 		link.getCOSObject().setNeedToBeUpdated(true);
-		link.setAnnotationName("SignatureLink");
 		pdDocument.getPage(page).getAnnotations().add(link);
 		return link;
 	}
@@ -285,7 +283,6 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		stamp.setPrinted(true);
 		stamp.setPage(pdDocument.getPage(page));
 		stamp.getCOSObject().setNeedToBeUpdated(true);
-		stamp.setAnnotationName("Signature");
 		
 		// Create a PDFormXObject
         PDFormXObject form = new PDFormXObject(pdDocument);
@@ -344,7 +341,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 			return true;
 		} else if (signatureImageParameters.getPagePlacement() == VisualSignaturePagePlacement.RANGE) {
 			SignatureImagePageRange range = signatureImageParameters.getPageRange();
-			if (range.getPages().isEmpty() || range.getPages().contains(page + 1)) {
+			if (range.getPages() == null || range.getPages().isEmpty() || range.getPages().contains(page + 1)) {
 				if (range.isExcludeLast() && total - range.getExcludeLastCount() < page + 1) {
 					return false;
 				} else if (range.isExcludeFirst() && range.getExcludeFirstCount() <= page + 1) {
