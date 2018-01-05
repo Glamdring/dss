@@ -200,11 +200,16 @@ class PdfBoxSignatureService implements PDFSignatureService {
 			throws FileNotFoundException, IOException {
 		int totalPages = pdDocument.getNumberOfPages();
 		List<PDAnnotation> result = new ArrayList<>();
+		
+		
 		List<SignatureImageParameters> parametersList = signatureParameters.getStampImageParameters();
 		for (int page = 0; page < totalPages; page++) {
 			for (SignatureImageParameters parameters : parametersList) {
 				if (parameters != null && placeSignatureOnPage(page, totalPages, parameters)) {
-	
+					PDPage currentPage = pdDocument.getPage(getPage(parameters.getPage(), pdDocument.getNumberOfPages()));
+					float x = ImageUtils.convertNegativeAxisValue(parameters.getxAxis(), currentPage.getCropBox().getWidth());
+					float y = ImageUtils.convertNegativeAxisValue(parameters.getyAxis(), currentPage.getCropBox().getHeight());
+					
 					ImageAndResolution ires = ImageUtils.create(parameters, 
 							signatureParameters.getSigningCertificate(), 
 							signatureParameters.bLevel().getSigningDate(),
@@ -220,10 +225,12 @@ class PdfBoxSignatureService implements PDFSignatureService {
 					}
 					
 					SignatureImageAndPosition position = SignatureImageAndPositionProcessor.process(
-							parameters, pdDocument,	ires, getPage(parameters.getPage(), pdDocument.getNumberOfPages()));
+							parameters, pdDocument,	ires, getPage(parameters.getPage(), pdDocument.getNumberOfPages()), x, y);
 	
-					PDRectangle rect = new PDRectangle(position.getX(), position.getY(), parameters.getWidth(),
-							parameters.getHeight());
+					// we need to invert the Y so that it starts from the top rather than from the bottom
+					y = currentPage.getCropBox().getHeight() - position.getY() - parameters.getHeight();
+					
+					PDRectangle rect = new PDRectangle(position.getX(), y, parameters.getWidth(), parameters.getHeight());
 					
 					PDAnnotationLink link = addLink(pdDocument, page, rect);
 					PDAnnotationRubberStamp stamp = createStamp(pdDocument, page, rect, position.getSignatureImage());
@@ -371,12 +378,17 @@ class PdfBoxSignatureService implements PDFSignatureService {
 			// DSS-747. Using the DPI resolution to convert java size to dot
 			ImageAndResolution ires = ImageUtils.create(signatureImageParameters, signingCertificate, signingDate, pdfSignatureImageDir);
 
+			int pageIndex = getPage(signatureImageParameters.getPage(), doc.getNumberOfPages());
+			PDPage currentPage = doc.getPage(pageIndex);
+			float x = ImageUtils.convertNegativeAxisValue(signatureImageParameters.getxAxis(), currentPage.getCropBox().getWidth());
+			float y = ImageUtils.convertNegativeAxisValue(signatureImageParameters.getyAxis(), currentPage.getCropBox().getHeight());
+			
 			SignatureImageAndPosition signatureImageAndPosition = SignatureImageAndPositionProcessor
-					.process(signatureImageParameters, doc, ires, getPage(signatureImageParameters.getPage(), doc.getNumberOfPages()));
+					.process(signatureImageParameters, doc, ires, getPage(signatureImageParameters.getPage(), doc.getNumberOfPages()), x, y);
 
 			PDVisibleSignDesigner visibleSig = new PDVisibleSignDesigner(doc,
 					new ByteArrayInputStream(signatureImageAndPosition.getSignatureImage()), 
-					getPage(signatureImageParameters.getPage(), doc.getNumberOfPages()) + 1);
+					pageIndex + 1);
 
 
 			// calculate height based on width and ratio and vice versa
@@ -396,9 +408,8 @@ class PdfBoxSignatureService implements PDFSignatureService {
 				visibleSig.height(ires.toYPoint(visibleSig.getHeight()));
 			}
 
-			PDPage page = doc.getPage(getPage(signatureImageParameters.getPage(), doc.getNumberOfPages()));
 			visibleSig.xAxis(signatureImageAndPosition.getX());
-			visibleSig.yAxis(page.getCropBox().getHeight() - signatureImageAndPosition.getY() - visibleSig.getHeight());
+			visibleSig.yAxis(signatureImageAndPosition.getY());
 			
 			visibleSig.zoom(signatureImageParameters.getZoom() - 100); // pdfbox is 0 based
 

@@ -493,5 +493,13 @@ public class ImageUtils {
 	private static void appendRawCommands(OutputStream os, String commands) throws IOException {
 		os.write(commands.getBytes("ISO-8859-1"));
 	}
+	
+	public static float convertNegativeAxisValue(float axisValue, float dimension) {
+		if (axisValue >= 0) {
+			return axisValue;
+		} else {
+			return dimension + axisValue; // (subtracting the absolute value of the parameter)
+		}
+	}
 
 }
