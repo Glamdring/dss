@@ -39,6 +39,8 @@ public enum SignatureAlgorithm {
 	RSA_SHA384(EncryptionAlgorithm.RSA, DigestAlgorithm.SHA384),
 
 	RSA_SHA512(EncryptionAlgorithm.RSA, DigestAlgorithm.SHA512),
+	
+	RSA_SHA3(EncryptionAlgorithm.RSA, DigestAlgorithm.SHA3),
 
 	RSA_SSA_PSS_SHA1_MGF1(EncryptionAlgorithm.RSA, DigestAlgorithm.SHA1, MaskGenerationFunction.MGF1_SHA1),
 
@@ -162,6 +164,7 @@ public enum SignatureAlgorithm {
 		oidAlgorithms.put("1.2.840.113549.1.1.11", RSA_SHA256);
 		oidAlgorithms.put("1.2.840.113549.1.1.12", RSA_SHA384);
 		oidAlgorithms.put("1.2.840.113549.1.1.13", RSA_SHA512);
+		oidAlgorithms.put("2.16.840.1.101.3.4.3.14", RSA_SHA3);
 		oidAlgorithms.put("1.3.36.3.3.1.2", RSA_RIPEMD160);
 
 		oidAlgorithms.put("1.2.840.113549.1.1.4", RSA_MD5);
@@ -192,7 +195,7 @@ public enum SignatureAlgorithm {
 		oidAlgorithms.put("1.3.6.1.5.5.8.1.4", HMAC_RIPEMD160);
 
 		oidAlgorithms.put("1.2.840.113549.1.1.10", RSA_SSA_PSS_SHA1_MGF1);
-
+		
 		return oidAlgorithms;
 	}
 
