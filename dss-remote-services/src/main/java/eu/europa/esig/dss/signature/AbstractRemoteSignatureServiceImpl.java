@@ -42,6 +42,8 @@ public class AbstractRemoteSignatureServiceImpl {
 
     private LogSentinelClient logSentinelClient;
     
+    private boolean logsentinelIncludeNames;
+    
     private static final Logger LOG = LoggerFactory.getLogger(AbstractRemoteSignatureServiceImpl.class);
     
 	protected AbstractSignatureParameters getASiCSignatureParameters(AbstractSignatureParameters parameters, ASiCContainerType asicContainerType,
@@ -148,7 +150,11 @@ public class AbstractRemoteSignatureServiceImpl {
         this.logSentinelClient = logSentinelClient;
     }
     
-	/**
+    public void setLogsentinelIncludeNames(boolean logsentinelIncludeNames) {
+        this.logsentinelIncludeNames = logsentinelIncludeNames;
+    }
+
+    /**
 	 * Send audit trail information to the LogSentinel audit trail service for secure storing
 	 * 
 	 * @param document
@@ -168,14 +174,17 @@ public class AbstractRemoteSignatureServiceImpl {
         } catch (InvalidNameException ex) {
             throw new DSSException(ex);
         }
-        String signerNames = ldapName.getRdns().stream()
-                .filter(rdn -> rdn.getType().equals("CN"))
-                .map(Rdn::getValue)
-                .map(String.class::cast)
-                .findFirst().orElse("");
                 
 	    ActorData actor = new ActorData(loadCertificate.getCertificate().getSerialNumber().toString());
-	    actor.setActorDisplayName(signerNames);
+	    
+	    if (logsentinelIncludeNames) {
+    	    String signerNames = ldapName.getRdns().stream()
+                    .filter(rdn -> rdn.getType().equals("CN"))
+                    .map(Rdn::getValue)
+                    .map(String.class::cast)
+                    .findFirst().orElse("");
+    	    actor.setActorDisplayName(signerNames);
+	    }
 	    
 	    ActionData action = new ActionData(document.getDigest(params.getDigestAlgorithm()));
 	    action.setAction("SIGN");
