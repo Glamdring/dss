@@ -22,9 +22,12 @@ package eu.europa.esig.dss.pdf.pdfbox;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,16 +41,31 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.pdfbox.cos.COSArray;
+import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSStream;
 import org.apache.pdfbox.cos.COSString;
+import org.apache.pdfbox.io.IOUtils;
+import org.apache.pdfbox.io.RandomAccessBuffer;
+import org.apache.pdfbox.io.RandomAccessRead;
+import org.apache.pdfbox.pdfwriter.COSWriter;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDResources;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.graphics.form.PDFormXObject;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+import org.apache.pdfbox.pdmodel.interactive.action.PDActionNamed;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationPopup;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationRubberStamp;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationWidget;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAppearanceDictionary;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAppearanceStream;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDBorderStyleDictionary;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.PDSignature;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.SignatureInterface;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.SignatureOptions;
@@ -65,9 +83,11 @@ import eu.europa.esig.dss.DSSUtils;
 import eu.europa.esig.dss.DigestAlgorithm;
 import eu.europa.esig.dss.InMemoryDocument;
 import eu.europa.esig.dss.MimeType;
+import eu.europa.esig.dss.SignatureImagePageRange;
+import eu.europa.esig.dss.SignatureImageParameters;
+import eu.europa.esig.dss.SignatureImageParameters.VisualSignaturePagePlacement;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.pades.SignatureFieldParameters;
-import eu.europa.esig.dss.pades.SignatureImageParameters;
 import eu.europa.esig.dss.pades.signature.visible.ImageAndResolution;
 import eu.europa.esig.dss.pades.signature.visible.ImageUtils;
 import eu.europa.esig.dss.pdf.DSSDictionaryCallback;
@@ -89,15 +109,21 @@ class PdfBoxSignatureService implements PDFSignatureService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(PdfBoxSignatureService.class);
 
+	private File pdfSignatureImageDir;
+	
 	@Override
-	public byte[] digest(final InputStream toSignDocument, final PAdESSignatureParameters parameters, final DigestAlgorithm digestAlgorithm)
-			throws DSSException {
+	public byte[] digest(final InputStream toSignDocument, final PAdESSignatureParameters parameters,
+			final DigestAlgorithm digestAlgorithm, boolean timestamping) throws DSSException {
 
 		final byte[] signatureValue = DSSUtils.EMPTY_BYTE_ARRAY;
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		PDDocument pdDocument = null;
 		try {
-			pdDocument = PDDocument.load(toSignDocument);
+			if (!timestamping) {
+				pdDocument = loadAndStampDocument(toSignDocument, parameters);
+			} else {
+				pdDocument = PDDocument.load(toSignDocument);
+			}
 			PDSignature pdSignature = createSignatureDictionary(parameters, pdDocument);
 
 			return signDocumentAndReturnDigest(parameters, signatureValue, outputStream, pdDocument, pdSignature, digestAlgorithm);
@@ -110,14 +136,19 @@ class PdfBoxSignatureService implements PDFSignatureService {
 	}
 
 	@Override
-	public void sign(final InputStream pdfData, final byte[] signatureValue, final OutputStream signedStream, final PAdESSignatureParameters parameters,
-			final DigestAlgorithm digestAlgorithm) throws DSSException {
+	public void sign(final InputStream pdfData, final byte[] signatureValue, final OutputStream signedStream,
+			final PAdESSignatureParameters parameters, final DigestAlgorithm digestAlgorithm, boolean timestamping) throws DSSException {
 
 		PDDocument pdDocument = null;
 		try {
-			pdDocument = PDDocument.load(pdfData);
+			if (!timestamping) {
+				pdDocument = loadAndStampDocument(pdfData, parameters);
+			} else {
+				pdDocument = PDDocument.load(pdfData);
+			}
 			final PDSignature pdSignature = createSignatureDictionary(parameters, pdDocument);
-			signDocumentAndReturnDigest(parameters, signatureValue, signedStream, pdDocument, pdSignature, digestAlgorithm);
+			signDocumentAndReturnDigest(parameters, signatureValue, signedStream, pdDocument, pdSignature,
+					digestAlgorithm);
 		} catch (IOException e) {
 			throw new DSSException(e);
 		} finally {
@@ -125,34 +156,179 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		}
 	}
 
-	private byte[] signDocumentAndReturnDigest(final PAdESSignatureParameters parameters, final byte[] signatureBytes, final OutputStream fileOutputStream,
-			final PDDocument pdDocument, final PDSignature pdSignature, final DigestAlgorithm digestAlgorithm) throws DSSException {
+	private PDDocument loadAndStampDocument(InputStream pdfData, PAdESSignatureParameters parameters)
+			throws IOException {
+		byte[] pdfBytes = IOUtils.toByteArray(pdfData);
+		PDDocument pdDocument = PDDocument.load(pdfBytes);
+		if (parameters.getStampImageParameters() != null) {
+			List<PDAnnotation> annotations = addStamps(pdDocument, parameters);
+			
+			setDocumentId(parameters, pdDocument);
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			try (COSWriter writer = new COSWriter(baos, new RandomAccessBuffer(pdfBytes))) {
+				// force-add the annotations (wouldn't be saved in incremental updates otherwise)
+				annotations.forEach(ann -> addObjectToWrite(writer, ann.getCOSObject()));
+				
+				writer.write(pdDocument);
+			}
+			pdDocument.close();
+			pdDocument = PDDocument.load(baos.toByteArray());
+		}
+		return pdDocument;
+	}
+
+	private void addObjectToWrite(COSWriter writer, COSDictionary cosObject) {
+		// the COSWriter does not expose the addObjectToWrite method, so we need reflection to add the annotations
+		try {
+			Method method = writer.getClass().getDeclaredMethod("addObjectToWrite", COSBase.class);
+			method.setAccessible(true);
+			method.invoke(writer, cosObject);
+		} catch (Exception ex) {
+			throw new RuntimeException(ex);
+		}
+	}
+
+	private List<PDAnnotation> getExistingAnnotations(PDDocument pdDocument) throws IOException {
+		List<PDAnnotation> annotations = new ArrayList<>();
+		for (PDPage page : pdDocument.getPages()) {
+			annotations.addAll(page.getAnnotations());
+		}
+		return annotations;
+	}
+
+	private List<PDAnnotation> addStamps(PDDocument pdDocument, PAdESSignatureParameters signatureParameters)
+			throws FileNotFoundException, IOException {
+		int totalPages = pdDocument.getNumberOfPages();
+		List<PDAnnotation> result = new ArrayList<>();
+		
+		
+		List<SignatureImageParameters> parametersList = signatureParameters.getStampImageParameters();
+		for (int page = 0; page < totalPages; page++) {
+			for (SignatureImageParameters parameters : parametersList) {
+				if (parameters != null && placeSignatureOnPage(page, totalPages, parameters)) {
+					PDPage currentPage = pdDocument.getPage(getPage(parameters.getPage(), pdDocument.getNumberOfPages()));
+					float x = ImageUtils.convertNegativeAxisValue(parameters.getxAxis(), currentPage.getCropBox().getWidth());
+					float y = ImageUtils.convertNegativeAxisValue(parameters.getyAxis(), currentPage.getCropBox().getHeight());
+					
+					ImageAndResolution ires = ImageUtils.create(parameters, 
+							signatureParameters.getSigningCertificate(), 
+							signatureParameters.bLevel().getSigningDate(),
+							pdfSignatureImageDir);
+					
+					// calculate height based on width and ratio and vice versa
+					if (parameters.getWidth() != 0 && parameters.getHeight() == 0 && ires.getRatio() != 0) {
+						parameters.setHeight((int) (parameters.getWidth() / ires.getRatio()));
+					}
+					
+					if (parameters.getWidth() == 0 && parameters.getHeight() != 0 && ires.getRatio() != 0) {
+						parameters.setWidth((int) (parameters.getHeight() * ires.getRatio()));
+					}
+					
+					SignatureImageAndPosition position = SignatureImageAndPositionProcessor.process(
+							parameters, pdDocument,	ires, getPage(parameters.getPage(), pdDocument.getNumberOfPages()), x, y);
+	
+					// we need to invert the Y so that it starts from the top rather than from the bottom
+					y = currentPage.getCropBox().getHeight() - position.getY() - parameters.getHeight();
+					
+					PDRectangle rect = new PDRectangle(position.getX(), y, parameters.getWidth(), parameters.getHeight());
+					
+					PDAnnotationLink link = addLink(pdDocument, page, rect);
+					PDAnnotationRubberStamp stamp = createStamp(pdDocument, page, rect, position.getSignatureImage());
+					PDAnnotationPopup popup = addPopup(pdDocument, page, rect, stamp);
+					stamp.setPopup(popup);
+					
+					pdDocument.getPage(page).getAnnotations().add(stamp);
+					
+					pdDocument.getPage(page).getCOSObject().setNeedToBeUpdated(true);
+					
+					result.add(stamp);
+					result.add(popup);
+					result.add(link);
+				}
+			}
+		}
+		return result;
+	}
+
+	private PDAnnotationPopup addPopup(PDDocument pdDocument, int page, PDRectangle rect,
+			PDAnnotationRubberStamp stamp) throws IOException {
+		PDAnnotationPopup popup = new PDAnnotationPopup();
+		popup.setParent(stamp);
+		popup.setRectangle(rect);
+		popup.setContents("Signature");
+		popup.setPrinted(true);
+		popup.setPage(pdDocument.getPage(page));
+		popup.getCOSObject().setNeedToBeUpdated(true);
+		pdDocument.getPage(page).getAnnotations().add(popup);
+		return popup;
+	}
+
+	private PDAnnotationLink addLink(PDDocument pdDocument, int page, PDRectangle rect) throws IOException {
+		PDAnnotationLink link = new PDAnnotationLink();
+		link.setRectangle(rect);
+		link.setPage(pdDocument.getPage(page));
+		PDActionNamed action = new PDActionNamed();
+		action.setN("ShowHideSignatures");
+		link.setAction(action);
+		link.setPrinted(true);
+		link.setBorderStyle(new PDBorderStyleDictionary());
+		link.getBorderStyle().setWidth(0);
+		link.getCOSObject().setNeedToBeUpdated(true);
+		pdDocument.getPage(page).getAnnotations().add(link);
+		return link;
+	}
+
+	private PDAnnotationRubberStamp createStamp(final PDDocument pdDocument, int page, PDRectangle rect, byte[] image) throws FileNotFoundException, IOException {
+		
+		PDAnnotationRubberStamp stamp = new PDAnnotationRubberStamp();
+		stamp.setRectangle(rect);
+		stamp.setInvisible(false);
+		stamp.setBorderStyle(new PDBorderStyleDictionary());
+		stamp.getBorderStyle().setWidth(0);
+		stamp.setHidden(false);
+		stamp.setSubject("Subject"); //TODO actual subject?
+		stamp.setPrinted(true);
+		stamp.setPage(pdDocument.getPage(page));
+		stamp.getCOSObject().setNeedToBeUpdated(true);
+		
+		// Create a PDFormXObject
+        PDFormXObject form = new PDFormXObject(pdDocument);
+        form.setResources(new PDResources());
+        form.setBBox(rect);
+    	form.setFormType(1);
+
+    	PDImageXObject ximage = PDImageXObject.createFromByteArray(pdDocument, image, "stamp");
+    	
+    	try (OutputStream formStream = form.getStream().createOutputStream()) {
+			ImageUtils.drawXObject(ximage, form.getResources(), formStream, rect.getLowerLeftX(), rect.getLowerLeftY(),
+					rect.getWidth(), rect.getHeight());
+    	}
+    	
+    	PDAppearanceStream myDic = new PDAppearanceStream(form.getCOSObject());
+        PDAppearanceDictionary appearance = new PDAppearanceDictionary(new COSDictionary());
+    	appearance.setNormalAppearance(myDic);
+    	stamp.setAppearance(appearance);
+		return stamp;
+	}
+	
+	private byte[] signDocumentAndReturnDigest(final PAdESSignatureParameters parameters, final byte[] signatureBytes,
+			final OutputStream fileOutputStream, final PDDocument pdDocument, final PDSignature pdSignature,
+			final DigestAlgorithm digestAlgorithm) throws DSSException {
 
 		SignatureOptions options = new SignatureOptions();
 		try {
 
-			final MessageDigest digest = DSSUtils.getMessageDigest(digestAlgorithm);
-			// register signature dictionary and sign interface
-			SignatureInterface signatureInterface = new SignatureInterface() {
-
-				@Override
-				public byte[] sign(InputStream content) throws IOException {
-
-					byte[] b = new byte[4096];
-					int count;
-					while ((count = content.read(b)) > 0) {
-						digest.update(b, 0, count);
-					}
-					return signatureBytes;
-				}
-			};
-
+			LocalSignatureInterface signatureInterface = new LocalSignatureInterface(digestAlgorithm, signatureBytes);
+			
 			options.setPreferredSignatureSize(parameters.getSignatureSize());
-			fillImageParameters(pdDocument, parameters, options);
+			// 0 means no visible signature
+			if (parameters.getSignatureImageParameters() != null && parameters.getSignatureImageParameters().getPage() != 0) {
+				fillImageParameters(pdDocument, parameters, options);
+			}
 			pdDocument.addSignature(pdSignature, signatureInterface, options);
 
 			saveDocumentIncrementally(parameters, fileOutputStream, pdDocument);
-			final byte[] digestValue = digest.digest();
+			final byte[] digestValue = signatureInterface.getDigest().digest();
 			if (LOG.isDebugEnabled()) {
 				LOG.debug("Digest to be signed: " + Utils.toHex(digestValue));
 			}
@@ -164,39 +340,84 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		}
 	}
 
-	protected void fillImageParameters(final PDDocument doc, final PAdESSignatureParameters signatureParameters, SignatureOptions options) throws IOException {
-		SignatureImageParameters signatureImageParameters = signatureParameters.getSignatureImageParameters();
-		fillImageParameters(doc, signatureImageParameters, options);
+	private boolean placeSignatureOnPage(int page, int total, SignatureImageParameters signatureImageParameters) {
+		if (signatureImageParameters.getPagePlacement() == VisualSignaturePagePlacement.SINGLE_PAGE
+				&& page == getPage(signatureImageParameters.getPage(), total)) {
+			return true;
+		} else if (signatureImageParameters.getPagePlacement() == VisualSignaturePagePlacement.ALL_PAGES) {
+			return true;
+		} else if (signatureImageParameters.getPagePlacement() == VisualSignaturePagePlacement.RANGE) {
+			SignatureImagePageRange range = signatureImageParameters.getPageRange();
+			if (range.getPages() == null || range.getPages().isEmpty() || range.getPages().contains(page + 1)) {
+				if (range.isExcludeLast() && total - range.getExcludeLastCount() < page + 1) {
+					return false;
+				} else if (range.isExcludeFirst() && range.getExcludeFirstCount() <= page + 1) {
+					return false;
+				}
+				return true;
+			}
+		}
+		return false;
 	}
 
-	protected void fillImageParameters(final PDDocument doc, final SignatureImageParameters signatureImageParameters, SignatureOptions options)
-			throws IOException {
+	private int getPage(int configuredPage, int total) {
+		// negative values are counted from the end of the document, e.g. -1 is the last page.
+		return configuredPage >= 0 ? configuredPage - 1 : total - Math.abs(configuredPage);
+	}
+
+	protected void fillImageParameters(final PDDocument doc, final PAdESSignatureParameters signatureParameters,
+			SignatureOptions options) throws IOException {
+		SignatureImageParameters signatureImageParameters = signatureParameters.getSignatureImageParameters();
+		fillImageParameters(doc, signatureImageParameters, options, signatureParameters.getSigningCertificate(),
+				signatureParameters.bLevel().getSigningDate());
+	}
+
+	protected void fillImageParameters(final PDDocument doc, final SignatureImageParameters signatureImageParameters,
+			SignatureOptions options, CertificateToken signingCertificate, Date signingDate) throws IOException {
 		if (signatureImageParameters != null) {
 			// DSS-747. Using the DPI resolution to convert java size to dot
-			ImageAndResolution ires = ImageUtils.create(signatureImageParameters);
+			ImageAndResolution ires = ImageUtils.create(signatureImageParameters, signingCertificate, signingDate, pdfSignatureImageDir);
 
-			SignatureImageAndPosition signatureImageAndPosition = SignatureImageAndPositionProcessor.process(signatureImageParameters, doc, ires);
+			int pageIndex = getPage(signatureImageParameters.getPage(), doc.getNumberOfPages());
+			PDPage currentPage = doc.getPage(pageIndex);
+			float x = ImageUtils.convertNegativeAxisValue(signatureImageParameters.getxAxis(), currentPage.getCropBox().getWidth());
+			float y = ImageUtils.convertNegativeAxisValue(signatureImageParameters.getyAxis(), currentPage.getCropBox().getHeight());
+			
+			SignatureImageAndPosition signatureImageAndPosition = SignatureImageAndPositionProcessor
+					.process(signatureImageParameters, doc, ires, getPage(signatureImageParameters.getPage(), doc.getNumberOfPages()), x, y);
 
-			PDVisibleSignDesigner visibleSig = new PDVisibleSignDesigner(doc, new ByteArrayInputStream(signatureImageAndPosition.getSignatureImage()),
-					signatureImageParameters.getPage());
+			PDVisibleSignDesigner visibleSig = new PDVisibleSignDesigner(doc,
+					new ByteArrayInputStream(signatureImageAndPosition.getSignatureImage()), 
+					pageIndex + 1);
 
-			visibleSig.xAxis(signatureImageAndPosition.getX());
-			visibleSig.yAxis(signatureImageAndPosition.getY());
 
-			if ((signatureImageParameters.getWidth() != 0) && (signatureImageParameters.getHeight() != 0)) {
+			// calculate height based on width and ratio and vice versa
+			if (signatureImageParameters.getWidth() != 0 && signatureImageParameters.getHeight() == 0 && ires.getRatio() != 0) {
+				signatureImageParameters.setHeight((int) (signatureImageParameters.getWidth() / ires.getRatio()));
+			}
+			
+			if (signatureImageParameters.getWidth() == 0 && signatureImageParameters.getHeight() != 0 && ires.getRatio() != 0) {
+				signatureImageParameters.setWidth((int) (signatureImageParameters.getHeight() * ires.getRatio()));
+			}
+			
+			if (signatureImageParameters.getWidth() != 0 && signatureImageParameters.getHeight() != 0) {
 				visibleSig.width(signatureImageParameters.getWidth());
 				visibleSig.height(signatureImageParameters.getHeight());
 			} else {
 				visibleSig.width(ires.toXPoint(visibleSig.getWidth()));
 				visibleSig.height(ires.toYPoint(visibleSig.getHeight()));
 			}
+
+			visibleSig.xAxis(signatureImageAndPosition.getX());
+			visibleSig.yAxis(signatureImageAndPosition.getY());
+			
 			visibleSig.zoom(signatureImageParameters.getZoom() - 100); // pdfbox is 0 based
 
 			PDVisibleSigProperties signatureProperties = new PDVisibleSigProperties();
 			signatureProperties.visualSignEnabled(true).setPdVisibleSignature(visibleSig).buildSignature();
 
 			options.setVisualSignature(signatureProperties);
-			options.setPage(signatureImageParameters.getPage() - 1); // DSS-1138
+			options.setPage(getPage(signatureImageParameters.getPage(), doc.getNumberOfPages())); // DSS-1138
 		}
 	}
 
@@ -210,9 +431,11 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		}
 
 		signature.setType(getType());
-		// signature.setName(String.format("SD-DSS Signature %s", parameters.getDeterministicId()));
+		// signature.setName(String.format("SD-DSS Signature %s",
+		// parameters.getDeterministicId()));
 		Date date = parameters.bLevel().getSigningDate();
-		String encodedDate = " " + Utils.toHex(DSSUtils.digest(DigestAlgorithm.SHA1, Long.toString(date.getTime()).getBytes()));
+		String encodedDate = " "
+				+ Utils.toHex(DSSUtils.digest(DigestAlgorithm.SHA1, Long.toString(date.getTime()).getBytes()));
 		CertificateToken token = parameters.getSigningCertificate();
 		if (token == null) {
 			signature.setName("Unknown signer" + encodedDate);
@@ -258,25 +481,33 @@ class PdfBoxSignatureService implements PDFSignatureService {
 					signatureField.getCOSObject().setItem(COSName.V, signature);
 					return signature;
 				} else {
-					throw new DSSException("The signature field '" + sigFieldName + "' can not be signed since its already signed.");
+					throw new DSSException(
+							"The signature field '" + sigFieldName + "' can not be signed since its already signed.");
 				}
 			}
 		}
 		throw new DSSException("The signature field '" + sigFieldName + "' does not exist.");
 	}
 
-	public void saveDocumentIncrementally(PAdESSignatureParameters parameters, OutputStream outputStream, PDDocument pdDocument) throws DSSException {
+	public void saveDocumentIncrementally(PAdESSignatureParameters parameters, OutputStream outputStream, PDDocument pdDocument)
+			throws DSSException {
 		try {
-			// the document needs to have an ID, if not a ID based on the current system time is used, and then the
-			// digest of the signed data is different
-			if (pdDocument.getDocumentId() == null) {
-
-				final byte[] documentIdBytes = DSSUtils.digest(DigestAlgorithm.SHA256, parameters.bLevel().getSigningDate().toString().getBytes());
-				pdDocument.setDocumentId(DSSUtils.toLong(documentIdBytes));
-			}
+			setDocumentId(parameters, pdDocument);
 			pdDocument.saveIncremental(outputStream);
 		} catch (IOException e) {
 			throw new DSSException(e);
+		}
+	}
+
+	private void setDocumentId(PAdESSignatureParameters parameters, PDDocument pdDocument) {
+		// the document needs to have an ID, if not a ID based on the current system
+		// time is used, and then the
+		// digest of the signed data is different
+		if (pdDocument.getDocumentId() == null) {
+
+			final byte[] documentIdBytes = DSSUtils.digest(DigestAlgorithm.SHA256,
+					parameters.bLevel().getSigningDate().toString().getBytes());
+			pdDocument.setDocumentId(DSSUtils.toLong(documentIdBytes));
 		}
 	}
 
@@ -299,11 +530,13 @@ class PdfBoxSignatureService implements PDFSignatureService {
 	}
 
 	@Override
-	public void validateSignatures(CertificatePool validationCertPool, DSSDocument document, SignatureValidationCallback callback) throws DSSException {
+	public void validateSignatures(CertificatePool validationCertPool, DSSDocument document,
+			SignatureValidationCallback callback) throws DSSException {
 		// recursive search of signature
 		InputStream inputStream = document.openStream();
 		try {
-			List<PdfSignatureOrDocTimestampInfo> signaturesFound = getSignatures(validationCertPool, Utils.toByteArray(inputStream));
+			List<PdfSignatureOrDocTimestampInfo> signaturesFound = 
+					getSignatures(validationCertPool, Utils.toByteArray(inputStream));
 			for (PdfSignatureOrDocTimestampInfo pdfSignatureOrDocTimestampInfo : signaturesFound) {
 				callback.validate(pdfSignatureOrDocTimestampInfo);
 			}
@@ -314,7 +547,8 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		Utils.closeQuietly(inputStream);
 	}
 
-	private List<PdfSignatureOrDocTimestampInfo> getSignatures(CertificatePool validationCertPool, byte[] originalBytes) {
+	private List<PdfSignatureOrDocTimestampInfo> getSignatures(CertificatePool validationCertPool,
+			byte[] originalBytes) {
 		List<PdfSignatureOrDocTimestampInfo> signatures = new ArrayList<PdfSignatureOrDocTimestampInfo>();
 		PDDocument doc = null;
 		try {
@@ -361,10 +595,11 @@ class PdfBoxSignatureService implements PDFSignatureService {
 							}
 						}
 
-						signatureInfo = new PdfBoxDocTimestampInfo(validationCertPool, signature, signatureDictionary, dssDictionary, cms, signedContent,
-								isArchiveTimestamp);
+						signatureInfo = new PdfBoxDocTimestampInfo(validationCertPool, signature, signatureDictionary,
+								dssDictionary, cms, signedContent, isArchiveTimestamp);
 					} else {
-						signatureInfo = new PdfBoxSignatureInfo(validationCertPool, signature, signatureDictionary, dssDictionary, cms, signedContent);
+						signatureInfo = new PdfBoxSignatureInfo(validationCertPool, signature, signatureDictionary,
+								dssDictionary, cms, signedContent);
 					}
 
 					if (signatureInfo != null) {
@@ -375,8 +610,8 @@ class PdfBoxSignatureService implements PDFSignatureService {
 				linkSignatures(signatures);
 
 				for (PdfSignatureOrDocTimestampInfo sig : signatures) {
-					LOG.debug("Signature " + sig.uniqueId() + " found with byteRange " + Arrays.toString(sig.getSignatureByteRange()) + " ("
-							+ sig.getSubFilter() + ")");
+					LOG.debug("Signature " + sig.uniqueId() + " found with byteRange "
+							+ Arrays.toString(sig.getSignatureByteRange()) + " (" + sig.getSubFilter() + ")");
 				}
 			}
 
@@ -390,8 +625,8 @@ class PdfBoxSignatureService implements PDFSignatureService {
 	}
 
 	/**
-	 * This method links previous signatures to the new one. This is useful to get revision number and to know if a TSP
-	 * is over the DSS dictionary
+	 * This method links previous signatures to the new one. This is useful to get
+	 * revision number and to know if a TSP is over the DSS dictionary
 	 */
 	private void linkSignatures(List<PdfSignatureOrDocTimestampInfo> signatures) {
 		List<PdfSignatureOrDocTimestampInfo> previousList = new ArrayList<PdfSignatureOrDocTimestampInfo>();
@@ -432,7 +667,8 @@ class PdfBoxSignatureService implements PDFSignatureService {
 	}
 
 	@Override
-	public void addDssDictionary(InputStream inputStream, OutputStream outputStream, List<DSSDictionaryCallback> callbacks) {
+	public void addDssDictionary(InputStream inputStream, OutputStream outputStream,
+			List<DSSDictionaryCallback> callbacks) {
 		PDDocument pdDocument = null;
 		try {
 			pdDocument = PDDocument.load(inputStream);
@@ -585,7 +821,8 @@ class PdfBoxSignatureService implements PDFSignatureService {
 				signatureField.setPartialName(parameters.getName());
 			}
 			PDAnnotationWidget widget = signatureField.getWidgets().get(0);
-			PDRectangle rect = new PDRectangle(parameters.getOriginX(), parameters.getOriginY(), parameters.getWidth(), parameters.getHeight());
+			PDRectangle rect = new PDRectangle(parameters.getOriginX(), parameters.getOriginY(), parameters.getWidth(),
+					parameters.getHeight());
 			widget.setRectangle(rect);
 			widget.setPage(page);
 			page.getAnnotations().add(widget);
@@ -602,4 +839,43 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		return newPdfDoc;
 	}
 
+	public static class LocalSignatureInterface implements SignatureInterface {
+		private final MessageDigest digest;
+		private final byte[] signatureBytes;
+		
+		public LocalSignatureInterface(DigestAlgorithm digestAlgorithm, byte[] signatureBytes) {
+			digest = DSSUtils.getMessageDigest(digestAlgorithm);
+			this.signatureBytes = signatureBytes;
+		}
+		
+		@Override
+		public byte[] sign(InputStream content) throws IOException {
+			byte[] b = new byte[4096];
+			int count;
+			while ((count = content.read(b)) > 0) {
+				digest.update(b, 0, count);
+			}
+			return signatureBytes;
+		}
+		
+		public MessageDigest getDigest() {
+			return digest;
+		}
+	};
+
+	public static class LocalCOSWriter extends COSWriter {
+
+		public LocalCOSWriter(OutputStream os, RandomAccessRead randomAccessRead) throws IOException {
+			super(os, randomAccessRead);
+		}
+
+		public byte[] getFullOutput() {
+			return ((ByteArrayOutputStream) getOutput()).toByteArray();
+		}
+	}
+
+	@Override
+	public void setPdfSignatureImageDir(File dir) {
+		pdfSignatureImageDir = dir;
+	}
 }

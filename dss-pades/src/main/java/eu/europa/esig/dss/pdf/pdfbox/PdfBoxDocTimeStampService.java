@@ -34,8 +34,8 @@ import eu.europa.esig.dss.DSSASN1Utils;
 import eu.europa.esig.dss.DSSDocument;
 import eu.europa.esig.dss.DSSException;
 import eu.europa.esig.dss.DigestAlgorithm;
+import eu.europa.esig.dss.SignatureImageParameters;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
-import eu.europa.esig.dss.pades.SignatureImageParameters;
 import eu.europa.esig.dss.pdf.PDFSignatureService;
 import eu.europa.esig.dss.pdf.PDFTimestampService;
 import eu.europa.esig.dss.utils.Utils;
@@ -75,19 +75,19 @@ class PdfBoxDocTimeStampService extends PdfBoxSignatureService implements PDFSig
 
 		final DigestAlgorithm timestampDigestAlgorithm = parameters.getSignatureTimestampParameters().getDigestAlgorithm();
 		InputStream inputStream = document.openStream();
-		final byte[] digest = digest(inputStream, parameters, timestampDigestAlgorithm);
+		final byte[] digest = digest(inputStream, parameters, timestampDigestAlgorithm, true);
 		Utils.closeQuietly(inputStream);
 		final TimeStampToken timeStampToken = tspSource.getTimeStampResponse(timestampDigestAlgorithm, digest);
 		final byte[] encoded = DSSASN1Utils.getEncoded(timeStampToken);
 		inputStream = document.openStream();
-		sign(inputStream, encoded, signedStream, parameters, timestampDigestAlgorithm);
+		sign(inputStream, encoded, signedStream, parameters, timestampDigestAlgorithm, true);
 		Utils.closeQuietly(inputStream);
 	}
 
 	@Override
 	protected void fillImageParameters(final PDDocument doc, final PAdESSignatureParameters signatureParameters, SignatureOptions options) throws IOException {
 		SignatureImageParameters signatureImageParameters = signatureParameters.getTimestampImageParameters();
-		fillImageParameters(doc, signatureImageParameters, options);
+		fillImageParameters(doc, signatureImageParameters, options, null, null);
 	}
 
 }

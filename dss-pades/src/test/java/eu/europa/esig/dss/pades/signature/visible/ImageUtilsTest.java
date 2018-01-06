@@ -1,8 +1,9 @@
 package eu.europa.esig.dss.pades.signature.visible;
 
 import eu.europa.esig.dss.FileDocument;
-import eu.europa.esig.dss.pades.SignatureImageParameters;
-import eu.europa.esig.dss.pades.SignatureImageTextParameters;
+import eu.europa.esig.dss.SignatureImageParameters;
+import eu.europa.esig.dss.SignatureImageTextParameters;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -19,7 +20,7 @@ public class ImageUtilsTest {
         SignatureImageParameters imageParameters = createSignatureImageParameters();
 
         Dimension optimalSizeDimension = ImageUtils.getOptimalSize(imageParameters);
-        ImageAndResolution imageAndResolution = ImageUtils.create(imageParameters);
+        ImageAndResolution imageAndResolution = ImageUtils.create(imageParameters, null, null, null);
 
         BufferedImage image = ImageIO.read(imageAndResolution.getInputStream());
 

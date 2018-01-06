@@ -23,13 +23,14 @@ package eu.europa.esig.dss.pades.signature.visible;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.europa.esig.dss.DSSException;
-import eu.europa.esig.dss.pades.SignatureImageParameters;
+import eu.europa.esig.dss.SignatureImageParameters;
 
 /**
  * This class allows to merge two pictures together
@@ -108,6 +109,29 @@ public final class ImagesMerger {
 		return combined;
 	}
 
+	public static BufferedImage mergeOnBackground(final BufferedImage front, final BufferedImage back) {
+		if (front == null) {
+			return back;
+		} else if (back == null) {
+			return front;
+		}
+
+		final int newImageWidth = Math.max(front.getWidth(), back.getWidth());
+		final int newImageHeight = Math.max(front.getHeight(), back.getHeight());
+		final int imageType = getImageType(front, back);
+
+		BufferedImage combined = new BufferedImage(newImageWidth, newImageHeight, imageType);
+		Graphics2D g = combined.createGraphics();
+
+		ImageUtils.initRendering(g);
+
+		g.drawImage(back.getScaledInstance(newImageWidth, newImageHeight, Image.SCALE_SMOOTH), 
+				0, 0, newImageWidth, newImageHeight, null);
+		g.drawImage(front, 0, 0, newImageWidth, newImageHeight, null);
+
+		return combined;
+	}
+	
 	private static void fillBackground(Graphics g, final int width, final int heigth, final Color bgColor) {
 		g.setColor(bgColor);
 		g.fillRect(0, 0, width, heigth);
@@ -117,7 +141,7 @@ public final class ImagesMerger {
 		int imageType = BufferedImage.TYPE_INT_RGB;
 
 		if (ImageUtils.isTransparent(image1) || ImageUtils.isTransparent(image2)) {
-			LOG.warn("Transparency detected and enabled (be careful not valid with PDF/A !)");
+			LOG.debug("Transparency detected and enabled (be careful not valid with PDF/A !)");
 			imageType = BufferedImage.TYPE_INT_ARGB;
 		}
 

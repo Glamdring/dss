@@ -14,6 +14,8 @@ public class ImageAndResolution {
 	private int yDpi;
 
 	private InputStream inputStream;
+	
+	private float ratio;
 
 	public ImageAndResolution(InputStream inputStream, int xDpi, int yDpi) {
 		this.xDpi = xDpi;
@@ -44,7 +46,15 @@ public class ImageAndResolution {
 	public float toYPoint(float y) {
 		return toYInch(y) * 72f;
 	}
-
+	
+	public void setRatio(float ratio) {
+		this.ratio = ratio;
+	}
+	
+	public float getRatio() {
+		return ratio;
+	}
+	
 	@Override
 	public String toString() {
 		return "Resolution [xDpi=" + xDpi + ", yDpi=" + yDpi + "]";

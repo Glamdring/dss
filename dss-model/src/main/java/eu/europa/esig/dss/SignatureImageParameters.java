@@ -18,16 +18,22 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
-package eu.europa.esig.dss.pades;
+package eu.europa.esig.dss;
 
 import java.awt.Color;
 
-import eu.europa.esig.dss.DSSDocument;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 /**
  * Parameters for a visible signature creation
  *
  */
+@XmlAccessorType(XmlAccessType.FIELD)
+@XmlRootElement
 public class SignatureImageParameters {
 
 	public static final int DEFAULT_PAGE = 1;
@@ -82,7 +88,7 @@ public class SignatureImageParameters {
 		/**
 		 * y axis is the botton padding
 		 */
-		BOTTON;
+		BOTTOM;
 	}
 
 	/**
@@ -112,17 +118,34 @@ public class SignatureImageParameters {
 		ROTATE_270;
 	}
 
+	public enum VisualSignaturePagePlacement {
+		SINGLE_PAGE, ALL_PAGES, RANGE
+	}
+	
 	/**
 	 * This variable contains the image to use (company logo,...)
 	 */
+	@XmlTransient
 	private DSSDocument image;
+	
+	private RemoteDocument imageDocument;
 
+	/**
+	 * On which pages should the signature be placed
+	 */
+	private VisualSignaturePagePlacement pagePlacement = VisualSignaturePagePlacement.SINGLE_PAGE;
+	
 	/**
 	 * This variable defines the page where the image will appear (1st page by
 	 * default)
 	 */
 	private int page = DEFAULT_PAGE;
 
+	/**
+	 * Alternative to the "page" parameter - specify a page range
+	 */
+	private SignatureImagePageRange pageRange;
+	
 	/**
 	 * This variable defines the position of the image in the PDF page (X axis)
 	 */
@@ -144,7 +167,6 @@ public class SignatureImageParameters {
 	 */
 	private int height;
         
-        
 
 	/**
 	 * This variable defines a percent to zoom (100% means no scaling).
@@ -154,6 +176,7 @@ public class SignatureImageParameters {
 	/**
 	 * This variable defines the color of the image
 	 */
+	@XmlJavaTypeAdapter(ColorAdapter.class)
 	private Color backgroundColor;
 
 	/**
@@ -186,10 +209,27 @@ public class SignatureImageParameters {
 	private VisualSignatureAlignmentVertical alignmentVertical;
 
 	/**
-	 * This variable is use to defines the text to generate on the image
-	 */
+     * This variable is use to define the text to generate on the left side of the
+     * image (or if no right side is specified - the whole image)
+     */
 	private SignatureImageTextParameters textParameters;
 
+	/**
+     * This variable is use to define the text to generate on the right side of the
+     * image (leave blank if you don't need two columns)
+     */
+    private SignatureImageTextParameters textRightParameters;
+    
+    
+    private String dateFormat = "dd.MM.yyyy HH:mm XXX";
+    
+    
+    /**
+     * How opaque should the background image be in case the image is placed in the background.
+     * 0 = fully transparent, 255 = fully opaque
+     */
+    private int backgroundOpacity;
+    
 	public DSSDocument getImage() {
 		return image;
 	}
@@ -230,7 +270,7 @@ public class SignatureImageParameters {
 		this.page = page;
 	}
         
-            public int getWidth() {
+    public int getWidth() {
         return width;
     }
 
@@ -245,7 +285,6 @@ public class SignatureImageParameters {
     public void setHeight(int height) {
         this.height = height;
     }
-
 
 	public Color getBackgroundColor() {
 		return backgroundColor;
@@ -271,14 +310,6 @@ public class SignatureImageParameters {
 		this.signerTextImageVerticalAlignment = signerTextImageVerticalAlignment;
 	}
 
-	public SignatureImageTextParameters getTextParameters() {
-		return textParameters;
-	}
-
-	public void setTextParameters(SignatureImageTextParameters textParameters) {
-		this.textParameters = textParameters;
-	}
-
 	public VisualSignatureRotation getRotation() {
 		return rotation;
 	}
@@ -302,4 +333,60 @@ public class SignatureImageParameters {
 	public void setAlignmentVertical(VisualSignatureAlignmentVertical alignmentVertical) {
 		this.alignmentVertical = alignmentVertical;
 	}
+
+	public VisualSignaturePagePlacement getPagePlacement() {
+		return pagePlacement;
+	}
+
+	public void setPagePlacement(VisualSignaturePagePlacement pagePlacement) {
+		this.pagePlacement = pagePlacement;
+	}
+
+	public SignatureImagePageRange getPageRange() {
+		return pageRange;
+	}
+
+	public void setPageRange(SignatureImagePageRange pageRange) {
+		this.pageRange = pageRange;
+	}
+
+	public RemoteDocument getImageDocument() {
+		return imageDocument;
+	}
+
+	public void setImageDocument(RemoteDocument imageDocument) {
+		this.imageDocument = imageDocument;
+	}
+
+    public SignatureImageTextParameters getTextRightParameters() {
+        return textRightParameters;
+    }
+
+    public SignatureImageTextParameters getTextParameters() {
+        return textParameters;
+    }
+
+    public void setTextRightParameters(SignatureImageTextParameters textRightParameters) {
+        this.textRightParameters = textRightParameters;
+    }
+
+    public void setTextParameters(SignatureImageTextParameters textParameters) {
+        this.textParameters = textParameters;
+    }
+
+    public String getDateFormat() {
+        return dateFormat;
+    }
+
+    public void setDateFormat(String dateFormat) {
+        this.dateFormat = dateFormat;
+    }
+
+    public int getBackgroundOpacity() {
+        return backgroundOpacity;
+    }
+
+    public void setBackgroundOpacity(int backgroundOpacity) {
+        this.backgroundOpacity = backgroundOpacity;
+    }
 }

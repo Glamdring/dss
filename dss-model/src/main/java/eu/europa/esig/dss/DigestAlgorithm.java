@@ -42,6 +42,8 @@ public enum DigestAlgorithm {
 
 	SHA512("SHA512", "SHA-512", "2.16.840.1.101.3.4.2.3", "http://www.w3.org/2001/04/xmlenc#sha512"),
 
+	SHA3("SHA3", "SHA-3", "2.16.840.1.101.3.4.2.10", "https://www.w3.org/2007/05/xmldsig-more#sha3-512"),
+	
 	RIPEMD160("RIPEMD160", "RIPEMD160", "1.3.36.3.2.1", "http://www.w3.org/2001/04/xmlenc#ripemd160"),
 
 	MD2("MD2", "MD2", "1.2.840.113549.1.1.2", "http://www.w3.org/2001/04/xmldsig-more#md2"),

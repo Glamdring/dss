@@ -21,6 +21,7 @@
 package eu.europa.esig.dss.pades.signature;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.util.List;
 
@@ -62,6 +63,8 @@ public class PAdESService extends AbstractSignatureService<PAdESSignatureParamet
 
 	private final PadesCMSSignedDataBuilder padesCMSSignedDataBuilder;
 
+	private File signatureImageDir;
+	
 	/**
 	 * This is the constructor to create an instance of the {@code PAdESService}. A certificate verifier must be
 	 * provided.
@@ -101,8 +104,9 @@ public class PAdESService extends AbstractSignatureService<PAdESSignatureParamet
 		final CustomContentSigner customContentSigner = new CustomContentSigner(signatureAlgorithm.getJCEId());
 
 		final PDFSignatureService pdfSignatureService = PdfObjFactory.getInstance().newPAdESSignatureService();
+		pdfSignatureService.setPdfSignatureImageDir(signatureImageDir);
 		final InputStream inputStream = toSignDocument.openStream();
-		final byte[] messageDigest = pdfSignatureService.digest(inputStream, parameters, parameters.getDigestAlgorithm());
+		final byte[] messageDigest = pdfSignatureService.digest(inputStream, parameters, parameters.getDigestAlgorithm(), false);
 		Utils.closeQuietly(inputStream);
 
 		SignerInfoGeneratorBuilder signerInfoGeneratorBuilder = padesCMSSignedDataBuilder.getSignerInfoGeneratorBuilder(parameters, messageDigest);
@@ -128,8 +132,9 @@ public class PAdESService extends AbstractSignatureService<PAdESSignatureParamet
 		final CustomContentSigner customContentSigner = new CustomContentSigner(signatureAlgorithm.getJCEId(), signatureValue.getValue());
 
 		final PDFSignatureService pdfSignatureService = PdfObjFactory.getInstance().newPAdESSignatureService();
+		pdfSignatureService.setPdfSignatureImageDir(signatureImageDir);
 		InputStream inputStream = toSignDocument.openStream();
-		final byte[] messageDigest = pdfSignatureService.digest(inputStream, parameters, parameters.getDigestAlgorithm());
+		final byte[] messageDigest = pdfSignatureService.digest(inputStream, parameters, parameters.getDigestAlgorithm(), false);
 		Utils.closeQuietly(inputStream);
 
 		final SignerInfoGeneratorBuilder signerInfoGeneratorBuilder = padesCMSSignedDataBuilder.getSignerInfoGeneratorBuilder(parameters, messageDigest);
@@ -150,7 +155,7 @@ public class PAdESService extends AbstractSignatureService<PAdESSignatureParamet
 		final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 		final byte[] encodedData = CMSUtils.getEncoded(data);
 		inputStream = toSignDocument.openStream();
-		pdfSignatureService.sign(inputStream, encodedData, byteArrayOutputStream, parameters, parameters.getDigestAlgorithm());
+		pdfSignatureService.sign(inputStream, encodedData, byteArrayOutputStream, parameters, parameters.getDigestAlgorithm(), false);
 		Utils.closeQuietly(inputStream);
 		DSSDocument signature = new InMemoryDocument(byteArrayOutputStream.toByteArray());
 		signature.setMimeType(MimeType.PDF);
@@ -202,4 +207,8 @@ public class PAdESService extends AbstractSignatureService<PAdESSignatureParamet
 		return pdfSignatureService.addNewSignatureField(document, parameters);
 	}
 
+	public void setSignatureImageDir(File signatureImageDir) {
+		this.signatureImageDir = signatureImageDir;
+	}
+	
 }

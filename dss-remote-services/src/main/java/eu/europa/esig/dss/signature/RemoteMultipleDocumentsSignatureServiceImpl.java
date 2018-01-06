@@ -64,6 +64,8 @@ public class RemoteMultipleDocumentsSignatureServiceImpl extends AbstractRemoteS
 		List<DSSDocument> dssDocuments = createDSSDocuments(toSignDocuments);
 		DSSDocument signDocument = service.signDocument(dssDocuments, parameters, signatureValue);
 		LOG.info("SignDocument is finished");
+		
+		logSigningRequest(signDocument, remoteParameters);
 		return signDocument;
 	}
 

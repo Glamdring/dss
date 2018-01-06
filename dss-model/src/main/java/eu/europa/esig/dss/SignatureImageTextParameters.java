@@ -18,15 +18,20 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
-package eu.europa.esig.dss.pades;
+package eu.europa.esig.dss;
 
 import java.awt.Color;
 import java.awt.Font;
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 /**
  * This class allows to custom text generation in the PAdES visible signature
  *
  */
+@XmlAccessorType(XmlAccessType.FIELD)
 public class SignatureImageTextParameters {
 
 	public static final Font DEFAULT_FONT = new Font("serif", Font.PLAIN, 12);
@@ -37,7 +42,7 @@ public class SignatureImageTextParameters {
 	 * Enum to define where to add the signer name on the image
 	 */
 	public enum SignerPosition {
-		TOP, BOTTOM, RIGHT, LEFT
+		TOP, BOTTOM, RIGHT, LEFT, FOREGROUND
 	}
 
     /**
@@ -66,20 +71,29 @@ public class SignatureImageTextParameters {
 	 * This variable defines the font to use when the signerNamePosition is not
 	 * NONE)
 	 */
+	@XmlJavaTypeAdapter(FontAdapter.class)
 	private Font font = DEFAULT_FONT;
 
 	/**
 	 * This variable defines the text color to use when the signerNamePosition
 	 * is not NONE (default is BLACK)
 	 */
+	@XmlJavaTypeAdapter(ColorAdapter.class)
 	private Color textColor = DEFAUT_TEXT_COLOR;
 
 	/**
 	 * This variable defines the text color to use when the signerNamePosition
 	 * is not NONE (default is WHITE)
 	 */
+	@XmlJavaTypeAdapter(ColorAdapter.class)
 	private Color backgroundColor = DEFAULT_BACKGROUND_COLOR;
-
+	
+	
+	/**
+	 * This variable defines the padding on the right of the text image
+	 */
+	private int rightPadding;
+	
 	public SignerPosition getSignerNamePosition() {
 		return signerNamePosition;
 	}
@@ -128,4 +142,11 @@ public class SignatureImageTextParameters {
 		this.text = text;
 	}
 
+    public int getRightPadding() {
+        return rightPadding;
+    }
+
+    public void setRightPadding(int rightPadding) {
+        this.rightPadding = rightPadding;
+    }
 }

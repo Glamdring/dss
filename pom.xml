@@ -42,8 +42,8 @@
 	</developers>
 
 	<properties>
-		<project.source.version>1.7</project.source.version>
-		<project.target.version>1.7</project.target.version>
+		<project.source.version>1.8</project.source.version>
+		<project.target.version>1.8</project.target.version>
 		<project.encoding>UTF-8</project.encoding>
 
 		<slf4j.version>1.7.25</slf4j.version>
@@ -52,7 +52,7 @@
 		<bouncycastle.version>1.58</bouncycastle.version>
 		<xmlsec.version>2.0.9</xmlsec.version>
 		<xalan.version>2.7.2</xalan.version>
-		<pdfbox.version>2.0.7</pdfbox.version>
+		<pdfbox.version>2.0.8</pdfbox.version>
 		<httpclient.version>4.5.3</httpclient.version>
 		<rs-api.version>2.0.1</rs-api.version>
 
@@ -593,6 +593,16 @@
 		<!-- <url>https://esig-dss.atlassian.net/projects/DSS</url> Old issues -->
 	</issueManagement>
 
+	<repositories>
+		<repository>
+			<id>apache.snapshots</id>
+			<url>https://repository.apache.org/content/groups/snapshots/</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+	
 	<profiles>
 		<profile>
 			<id>owasp</id>

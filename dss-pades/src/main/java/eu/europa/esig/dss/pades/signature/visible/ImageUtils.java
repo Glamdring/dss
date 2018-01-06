@@ -1,5 +1,6 @@
 package eu.europa.esig.dss.pades.signature.visible;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -7,12 +8,18 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Iterator;
+import java.util.Locale;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -26,7 +33,12 @@ import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.plugins.jpeg.JPEGImageWriteParam;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
 
+import org.apache.pdfbox.cos.COSName;
+import org.apache.pdfbox.pdmodel.PDResources;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
@@ -34,10 +46,14 @@ import org.w3c.dom.NodeList;
 
 import eu.europa.esig.dss.DSSDocument;
 import eu.europa.esig.dss.DSSException;
+import eu.europa.esig.dss.FileDocument;
+import eu.europa.esig.dss.InMemoryDocument;
 import eu.europa.esig.dss.MimeType;
-import eu.europa.esig.dss.pades.SignatureImageParameters;
-import eu.europa.esig.dss.pades.SignatureImageTextParameters;
+import eu.europa.esig.dss.SignatureImageParameters;
+import eu.europa.esig.dss.SignatureImageTextParameters;
+import eu.europa.esig.dss.SignatureImageTextParameters.SignerPosition;
 import eu.europa.esig.dss.utils.Utils;
+import eu.europa.esig.dss.x509.CertificateToken;
 
 /**
  * A static utilities that helps in creating ImageAndResolution
@@ -62,32 +78,70 @@ public class ImageUtils {
 
 	private ImageUtils() {
 	}
-
-	public static ImageAndResolution create(final SignatureImageParameters imageParameters) throws IOException {
-		SignatureImageTextParameters textParamaters = imageParameters.getTextParameters();
-
+	
+	public static ImageAndResolution create(final SignatureImageParameters imageParameters, CertificateToken signingCertificate, Date signingDate, File signatureImageDir) throws IOException {
+		SignatureImageTextParameters textLeftParameters = imageParameters.getTextParameters();
+		
+		// the image can be specified either as a DSSDocument or as RemoteDocument. In the latter case, we convert it
 		DSSDocument image = imageParameters.getImage();
-		if ((textParamaters != null) && Utils.isStringNotEmpty(textParamaters.getText())) {
-			BufferedImage buffImg = ImageTextWriter.createTextImage(textParamaters.getText(), textParamaters.getFont(), textParamaters.getTextColor(),
-					textParamaters.getBackgroundColor(), getDpi(imageParameters.getDpi()), textParamaters.getSignerTextHorizontalAlignment());
-
+		if (image == null && imageParameters.getImageDocument() != null) {
+			if (imageParameters.getImageDocument().getBytes() != null) {
+				image = new InMemoryDocument(imageParameters.getImageDocument().getBytes(), 
+						imageParameters.getImageDocument().getName(), 
+						imageParameters.getImageDocument().getMimeType());
+			} else if (signatureImageDir != null){
+				image = new FileDocument(new File(signatureImageDir, imageParameters.getImageDocument().getName()));
+			}
+		}
+		
+		if (textLeftParameters != null && Utils.isStringNotEmpty(textLeftParameters.getText())) {
+			Color textBackground = textLeftParameters.getBackgroundColor();
+			if (textLeftParameters.getSignerNamePosition() == SignerPosition.FOREGROUND) {
+				// fully transparent if two text images are going to be merged (their transparency is set when merging)
+				// partially-transparent if only the left image is going to be used
+				if (imageParameters.getTextRightParameters() != null) {
+					textBackground = new Color(255, 255, 255, 0);
+				} else {
+					textBackground = new Color(255, 255, 255, imageParameters.getBackgroundOpacity());
+				}
+			}
+			
+			String transformedText = transformText(textLeftParameters.getText(), imageParameters.getDateFormat(), signingDate, signingCertificate);
+			BufferedImage buffImg = ImageTextWriter.createTextImage(transformedText, textLeftParameters.getFont(), textLeftParameters.getTextColor(),
+					textBackground, getDpi(imageParameters.getDpi()), textLeftParameters.getSignerTextHorizontalAlignment(), textLeftParameters.getRightPadding());
+			
+			// in case there's a right side configured, join it with the left side of the text to form a single text image
+			SignatureImageTextParameters textRightParameters = imageParameters.getTextRightParameters();
+			if (textRightParameters != null) {
+				String transformedRightText = transformText(textRightParameters.getText(), imageParameters.getDateFormat(), signingDate, signingCertificate);
+				BufferedImage rightImg = ImageTextWriter.createTextImage(transformedRightText, textRightParameters.getFont(), textRightParameters.getTextColor(),
+						textBackground, getDpi(imageParameters.getDpi()), textRightParameters.getSignerTextHorizontalAlignment(), 0);
+				
+				buffImg = ImagesMerger.mergeOnRight(buffImg, rightImg, 
+						new Color(255, 255, 255, imageParameters.getBackgroundOpacity()), 
+						imageParameters.getSignerTextImageVerticalAlignment());
+			}
+			
 			if (image != null) {
 				try (InputStream is = image.openStream()) {
 					if (is != null) {
-						switch (textParamaters.getSignerNamePosition()) {
+						switch (textLeftParameters.getSignerNamePosition()) {
 						case LEFT:
-							buffImg = ImagesMerger.mergeOnRight(ImageIO.read(is), buffImg, textParamaters.getBackgroundColor(),
+							buffImg = ImagesMerger.mergeOnRight(ImageIO.read(is), buffImg, textLeftParameters.getBackgroundColor(),
 									imageParameters.getSignerTextImageVerticalAlignment());
 							break;
 						case RIGHT:
-							buffImg = ImagesMerger.mergeOnRight(buffImg, ImageIO.read(is), textParamaters.getBackgroundColor(),
+							buffImg = ImagesMerger.mergeOnRight(buffImg, ImageIO.read(is), textLeftParameters.getBackgroundColor(),
 									imageParameters.getSignerTextImageVerticalAlignment());
 							break;
 						case TOP:
-							buffImg = ImagesMerger.mergeOnTop(ImageIO.read(is), buffImg, textParamaters.getBackgroundColor());
+							buffImg = ImagesMerger.mergeOnTop(ImageIO.read(is), buffImg, textLeftParameters.getBackgroundColor());
 							break;
 						case BOTTOM:
-							buffImg = ImagesMerger.mergeOnTop(buffImg, ImageIO.read(is), textParamaters.getBackgroundColor());
+							buffImg = ImagesMerger.mergeOnTop(buffImg, ImageIO.read(is), textLeftParameters.getBackgroundColor());
+							break;
+						case FOREGROUND:
+							buffImg = ImagesMerger.mergeOnBackground(buffImg, ImageIO.read(is));
 							break;
 						default:
 							break;
@@ -95,11 +149,48 @@ public class ImageUtils {
 					}
 				}
 			}
-			return convertToInputStream(buffImg, getDpi(imageParameters.getDpi()));
+			ImageAndResolution result = convertToInputStream(buffImg, getDpi(imageParameters.getDpi()));
+			result.setRatio(buffImg.getWidth() / buffImg.getHeight());
+			return result;
 		}
 
 		// Image only
 		return readAndDisplayMetadata(image);
+	}
+
+	private static String transformText(String text, String dateFormat, Date signingDate, CertificateToken signingCertificate) {
+		if (signingCertificate != null) {
+			try {
+				String principal = signingCertificate.getSubjectX500Principal().getName().replace("+", ",");
+				LdapName ldapName = new LdapName(principal);
+				String[] names = ldapName.getRdns().stream()
+						.filter(rdn -> rdn.getType().equals("CN"))
+						.map(Rdn::getValue)
+						.map(String.class::cast)
+						.findFirst().orElse("").split(" ");
+				text = text.replace("%CN_1%", names[0]);
+				if (names.length > 1) {
+					text = text.replace("%CN_2%", names[1]);
+				} else {
+					text = text.replace("%CN_2%", "");
+				}
+				if (names.length > 2) {
+					text = text.replace("%CN_3%", names[2]);
+				} else {
+					text = text.replace("%CN_3%", "");
+				}
+			} catch (Exception ex) {
+				throw new RuntimeException(ex);
+			}
+		}
+		if (signingDate == null) {
+			signingDate = new Date();
+		}
+		if (text.contains("%DateTimeWithTimeZone%")) {
+			SimpleDateFormat df = new SimpleDateFormat(dateFormat);
+			text = text.replace("%DateTimeWithTimeZone%", df.format(signingDate));
+		}
+		return text;
 	}
 
 	/**
@@ -363,6 +454,52 @@ public class ImageUtils {
 		}
 		// pick the first available ImageReader
 		return readers.next();
+	}
+	
+	private static final String SAVE_GRAPHICS_STATE = "q\n";
+	private static final String RESTORE_GRAPHICS_STATE = "Q\n";
+	private static final String CONCATENATE_MATRIX = "cm\n";
+	private static final String XOBJECT_DO = "Do\n";
+	private static final String SPACE = " ";
+	private static final NumberFormat formatDecimal = NumberFormat.getNumberInstance(Locale.US);
+	
+	public static void drawXObject(PDImageXObject xobject, PDResources resources, OutputStream os, 
+            float x, float y, float width, float height) throws IOException {
+		COSName xObjectId = resources.add(xobject);
+
+        appendRawCommands(os, SAVE_GRAPHICS_STATE);
+        appendRawCommands(os, formatDecimal.format(width));
+        appendRawCommands(os, SPACE);
+        appendRawCommands(os, formatDecimal.format(0));
+        appendRawCommands(os, SPACE);
+        appendRawCommands(os, formatDecimal.format(0));
+        appendRawCommands(os, SPACE);
+        appendRawCommands(os, formatDecimal.format(height));
+        appendRawCommands(os, SPACE);
+        appendRawCommands(os, formatDecimal.format(x));
+        appendRawCommands(os, SPACE);
+        appendRawCommands(os, formatDecimal.format(y));
+        appendRawCommands(os, SPACE);
+        appendRawCommands(os, CONCATENATE_MATRIX);
+        appendRawCommands(os, SPACE);
+        appendRawCommands(os, "/");
+        appendRawCommands(os, xObjectId.getName());
+        appendRawCommands(os, SPACE);
+        appendRawCommands(os, XOBJECT_DO);
+        appendRawCommands(os, SPACE);
+        appendRawCommands(os, RESTORE_GRAPHICS_STATE);
+    }
+
+	private static void appendRawCommands(OutputStream os, String commands) throws IOException {
+		os.write(commands.getBytes("ISO-8859-1"));
+	}
+	
+	public static float convertNegativeAxisValue(float axisValue, float dimension) {
+		if (axisValue >= 0) {
+			return axisValue;
+		} else {
+			return dimension + axisValue; // (subtracting the absolute value of the parameter)
+		}
 	}
 
 }
