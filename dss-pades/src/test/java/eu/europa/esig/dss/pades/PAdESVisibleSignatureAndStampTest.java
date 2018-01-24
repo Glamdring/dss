@@ -7,7 +7,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 
@@ -92,7 +91,7 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		params.getSignatureImageParameters().getTextRightParameters().setText("Signature created by\nTest\nDate: %DateTimeWithTimeZone%");
 		params.getSignatureImageParameters().setPageRange(new SignatureImagePageRange());
 		params.getSignatureImageParameters().setxAxis(25);
-		params.getSignatureImageParameters().setyAxis(15);
+		params.getSignatureImageParameters().setyAxis(-55);
 		params.getSignatureImageParameters().setWidth(200);
 		params.getSignatureImageParameters().setPagePlacement(VisualSignaturePagePlacement.SINGLE_PAGE);
 		params.getSignatureImageParameters().setPage(-1);
@@ -108,10 +107,12 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		stampParams.getTextRightParameters().setText("Signature created by\nTest\nDate: %DateTimeWithTimeZone%");
 		stampParams.setPageRange(new SignatureImagePageRange());
 		stampParams.setxAxis(25);
-		stampParams.setyAxis(15);
+		stampParams.setyAxis(-55);
 		stampParams.setWidth(200);
 		stampParams.setPagePlacement(VisualSignaturePagePlacement.RANGE);
-		stampParams.getPageRange().setPages(Arrays.asList(1, 2));
+		stampParams.getPageRange().setAll(true);
+		stampParams.getPageRange().setExcludeLast(true);
+		stampParams.getPageRange().setExcludeLastCount(1);
 		
 		params.setStampImageParameters(Collections.singletonList(stampParams));
 		
