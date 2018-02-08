@@ -161,6 +161,12 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		byte[] pdfBytes = IOUtils.toByteArray(pdfData);
 		PDDocument pdDocument = PDDocument.load(pdfBytes);
 		if (parameters.getStampImageParameters() != null) {
+			for (PDPage page : pdDocument.getPages()) {
+				// reset existing annotations (needed in order to have the stamps added)
+				page.setAnnotations(null);
+			}
+			// reset document outline (needed in order to have the stamps added)
+			pdDocument.getDocumentCatalog().setDocumentOutline(null);
 			List<PDAnnotation> annotations = addStamps(pdDocument, parameters);
 			
 			setDocumentId(parameters, pdDocument);
@@ -169,6 +175,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 				// force-add the annotations (wouldn't be saved in incremental updates otherwise)
 				annotations.forEach(ann -> addObjectToWrite(writer, ann.getCOSObject()));
 				
+				// technically the same as saveIncremental but with more control
 				writer.write(pdDocument);
 			}
 			pdDocument.close();
