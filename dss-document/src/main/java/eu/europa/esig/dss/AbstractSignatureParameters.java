@@ -49,10 +49,15 @@ public abstract class AbstractSignatureParameters extends AbstractSerializableSi
 	 */
 	private List<CertificateToken> certificateChain = new LinkedList<CertificateToken>();
 
-	/*
+	/**
 	 * This parameter is here because that's a signed attribute. It must be computed before getDataToSign/signDocument
 	 */
 	private List<TimestampToken> contentTimestamps;
+	
+	/**
+	 * Indicates whether this request is for signing validation reports
+	 */
+	private boolean validationReportSigning;
 
 	/**
 	 * Returns the list of the {@code TimestampToken} to be incorporated within the signature and representing the
@@ -175,5 +180,13 @@ public abstract class AbstractSignatureParameters extends AbstractSerializableSi
 	public void reinitDeterministicId() {
 		deterministicId = null;
 	}
+
+    public boolean isValidationReportSigning() {
+        return validationReportSigning;
+    }
+
+    public void setValidationReportSigning(boolean validationReportSigning) {
+        this.validationReportSigning = validationReportSigning;
+    }
 
 }

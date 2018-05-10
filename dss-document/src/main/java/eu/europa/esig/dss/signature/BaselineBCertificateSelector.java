@@ -43,10 +43,13 @@ public class BaselineBCertificateSelector {
 
 			List<CertificateToken> result = new LinkedList<CertificateToken>();
 			for (CertificateToken certificateToken : orderedCertificates) {
-				if (!trustedCertSource.get(certificateToken.getSubjectX500Principal()).isEmpty()) {
-					// trust anchor and its parents are skipped
-					break;
-				}
+			    // in case this is a signature on validation report, do not skip trusted anchors
+			    if (!parameters.isValidationReportSigning()) {
+    				if (!trustedCertSource.get(certificateToken.getSubjectX500Principal()).isEmpty()) {
+    					// trust anchor and its parents are skipped
+    					break;
+    				}
+			    }
 				result.add(certificateToken);
 			}
 
