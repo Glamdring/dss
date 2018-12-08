@@ -20,6 +20,7 @@
  */
 package eu.europa.esig.dss.pdf.pdfbox;
 
+import java.awt.image.ByteLookupTable;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -568,11 +569,14 @@ class PdfBoxSignatureService implements PDFSignatureService {
 				PdfDict catalog = new PdfBoxDict(doc.getDocumentCatalog().getCOSObject(), doc);
 				PdfDssDict dssDictionary = PdfDssDict.extract(catalog);
 
+				boolean entireFileConvered = false;
 				for (PDSignature signature : pdSignatures) {
 					String subFilter = signature.getSubFilter();
 
 					int[] byteRange = signature.getByteRange();
-					validateByteRange(byteRange);
+					if (validateByteRange(byteRange, originalBytes.length)) {
+						entireFileConvered = true;
+					}
 					
 					COSDictionary dict = signature.getCOSObject();
 					COSString item = (COSString) dict.getDictionaryObject(COSName.CONTENTS);
@@ -615,6 +619,10 @@ class PdfBoxSignatureService implements PDFSignatureService {
 						signatures.add(signatureInfo);
 					}
 				}
+				
+				if (!entireFileConvered) {
+					throw new DSSException("At least one signature should cover the entire file");
+				}
 				Collections.sort(signatures, new PdfSignatureOrDocTimestampInfoComparator());
 				linkSignatures(signatures);
 
@@ -633,7 +641,7 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		return signatures;
 	}
 
-	private void validateByteRange(int[] byteRange) {
+	private boolean validateByteRange(int[] byteRange, int totalFileBytes) {
 		if (byteRange == null || byteRange.length != 4) {
 			throw new DSSException("Incorrect BytRange size");
 		}
@@ -653,6 +661,12 @@ class PdfBoxSignatureService implements PDFSignatureService {
 		if (d <= 0) {
 			throw new DSSException("The second hash part doesn't cover anything");
 		}
+
+		if (c + d == totalFileBytes) {
+			return true;
+		}
+		
+		return false;
 	}
 	
 	/**
