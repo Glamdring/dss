@@ -1,6 +1,25 @@
+/**
+ * DSS - Digital Signature Services
+ * Copyright (C) 2015 European Commission, provided under the CEF programme
+ * 
+ * This file is part of the "DSS - Digital Signature Services" project.
+ * 
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ * 
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
 package eu.europa.esig.dss.signature;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -22,12 +41,10 @@ import com.logsentinel.client.model.LogResponse;
 
 import eu.europa.esig.dss.ASiCContainerType;
 import eu.europa.esig.dss.AbstractSignatureParameters;
-import eu.europa.esig.dss.DSSDocument;
 import eu.europa.esig.dss.DSSException;
 import eu.europa.esig.dss.DSSUtils;
-import eu.europa.esig.dss.InMemoryDocument;
 import eu.europa.esig.dss.RemoteCertificate;
-import eu.europa.esig.dss.RemoteDocument;
+import eu.europa.esig.dss.RemoteConverter;
 import eu.europa.esig.dss.RemoteSignatureParameters;
 import eu.europa.esig.dss.SignatureForm;
 import eu.europa.esig.dss.asic.ASiCWithCAdESSignatureParameters;
@@ -46,23 +63,20 @@ public class AbstractRemoteSignatureServiceImpl {
     
     private static final Logger LOG = LoggerFactory.getLogger(AbstractRemoteSignatureServiceImpl.class);
     
-	protected AbstractSignatureParameters getASiCSignatureParameters(AbstractSignatureParameters parameters, ASiCContainerType asicContainerType,
+	protected AbstractSignatureParameters getASiCSignatureParameters(ASiCContainerType asicContainerType,
 			SignatureForm signatureForm) {
 		switch (signatureForm) {
 		case CAdES:
 			ASiCWithCAdESSignatureParameters asicWithCAdESParameters = new ASiCWithCAdESSignatureParameters();
 			asicWithCAdESParameters.aSiC().setContainerType(asicContainerType);
-			parameters = asicWithCAdESParameters;
-			break;
+			return asicWithCAdESParameters;
 		case XAdES:
 			ASiCWithXAdESSignatureParameters asicWithXAdESParameters = new ASiCWithXAdESSignatureParameters();
 			asicWithXAdESParameters.aSiC().setContainerType(asicContainerType);
-			parameters = asicWithXAdESParameters;
-			break;
+			return asicWithXAdESParameters;
 		default:
 			throw new DSSException("Unrecognized format (XAdES or CAdES are allowed with ASiC) : " + signatureForm);
 		}
-		return parameters;
 	}
 
 	protected AbstractSignatureParameters createParameters(RemoteSignatureParameters remoteParameters) {
@@ -70,7 +84,7 @@ public class AbstractRemoteSignatureServiceImpl {
 		ASiCContainerType asicContainerType = remoteParameters.getAsicContainerType();
 		SignatureForm signatureForm = remoteParameters.getSignatureLevel().getSignatureForm();
 		if (asicContainerType != null) {
-			parameters = getASiCSignatureParameters(parameters, asicContainerType, signatureForm);
+			parameters = getASiCSignatureParameters(asicContainerType, signatureForm);
 		} else {
 			switch (signatureForm) {
 			case CAdES:
@@ -98,7 +112,7 @@ public class AbstractRemoteSignatureServiceImpl {
 
 	protected void fillParameters(AbstractSignatureParameters parameters, RemoteSignatureParameters remoteParameters) {
 		parameters.setBLevelParams(remoteParameters.bLevel());
-		parameters.setDetachedContents(createDSSDocuments(remoteParameters.getDetachedContents()));
+		parameters.setDetachedContents(RemoteConverter.toDSSDocuments(remoteParameters.getDetachedContents()));
 		parameters.setDigestAlgorithm(remoteParameters.getDigestAlgorithm());
 		parameters.setEncryptionAlgorithm(remoteParameters.getEncryptionAlgorithm());
 		parameters.setSignatureLevel(remoteParameters.getSignatureLevel());

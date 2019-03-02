@@ -1,3 +1,23 @@
+/**
+ * DSS - Digital Signature Services
+ * Copyright (C) 2015 European Commission, provided under the CEF programme
+ * 
+ * This file is part of the "DSS - Digital Signature Services" project.
+ * 
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ * 
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
 package eu.europa.esig.dss.xades.signature;
 
 import static org.junit.Assert.assertEquals;
@@ -7,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.xml.security.signature.Reference;
 import org.apache.xml.security.transforms.Transforms;
 import org.junit.Test;
 
@@ -45,17 +66,17 @@ public class XAdESLevelBWith2ReferencesTest extends PKIFactoryAccess {
 
 		DSSReference ref1 = new DSSReference();
 		ref1.setContents(doc1);
-		ref1.setId(doc1.getName());
+		ref1.setId("r-" + doc1.getName());
 		ref1.setTransforms(transforms);
-		ref1.setType("text/xml");
+		ref1.setType(Reference.OBJECT_URI);
 		ref1.setUri('#' + doc1.getName());
 		ref1.setDigestMethodAlgorithm(DigestAlgorithm.SHA256);
 
 		DSSReference ref2 = new DSSReference();
 		ref2.setContents(doc2);
-		ref2.setId(doc2.getName());
+		ref2.setId("r-" + doc2.getName());
 		ref2.setTransforms(transforms);
-		ref2.setType("text/xml");
+		ref2.setType(Reference.OBJECT_URI);
 		ref2.setUri('#' + doc2.getName());
 		ref2.setDigestMethodAlgorithm(DigestAlgorithm.SHA256);
 
@@ -75,7 +96,7 @@ public class XAdESLevelBWith2ReferencesTest extends PKIFactoryAccess {
 		ToBeSigned toSign1 = service.getDataToSign(new FileDocument("src/test/resources/empty.xml"), signatureParameters);
 		SignatureValue value = getToken().sign(toSign1, signatureParameters.getDigestAlgorithm(), getPrivateKeyEntry());
 		DSSDocument result = service.signDocument(doc1, signatureParameters, value);
-		// result.save("src/test/resources/test.xml");
+//		result.save("target/test.xml");
 
 		SignedDocumentValidator validator = SignedDocumentValidator.fromDocument(result);
 		validator.setCertificateVerifier(getCompleteCertificateVerifier());

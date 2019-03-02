@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- *
+ * 
  * This file is part of the "DSS - Digital Signature Services" project.
- *
+ * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- *
+ * 
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -29,14 +29,14 @@ import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSSignedDataGenerator;
 import org.bouncycastle.cms.SignerInfoGeneratorBuilder;
+import org.bouncycastle.tsp.TimeStampToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.europa.esig.dss.DSSDocument;
 import eu.europa.esig.dss.DSSException;
 import eu.europa.esig.dss.DSSUtils;
-import eu.europa.esig.dss.InMemoryDocument;
-import eu.europa.esig.dss.MimeType;
+import eu.europa.esig.dss.DigestAlgorithm;
 import eu.europa.esig.dss.SignatureAlgorithm;
 import eu.europa.esig.dss.SignatureLevel;
 import eu.europa.esig.dss.SignatureValue;
@@ -51,8 +51,9 @@ import eu.europa.esig.dss.pdf.PDFSignatureService;
 import eu.europa.esig.dss.pdf.PdfObjFactory;
 import eu.europa.esig.dss.signature.AbstractSignatureService;
 import eu.europa.esig.dss.signature.SignatureExtension;
-import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.validation.CertificateVerifier;
+import eu.europa.esig.dss.validation.TimestampToken;
+import eu.europa.esig.dss.x509.TimestampType;
 
 /**
  * PAdES implementation of the DocumentSignatureService
@@ -96,6 +97,16 @@ public class PAdESService extends AbstractSignatureService<PAdESSignatureParamet
 	}
 
 	@Override
+	public TimestampToken getContentTimestamp(DSSDocument toSignDocument, PAdESSignatureParameters parameters) {
+		final PDFSignatureService pdfSignatureService = PdfObjFactory.newPAdESSignatureService();
+		final DigestAlgorithm digestAlgorithm = parameters.getContentTimestampParameters().getDigestAlgorithm();
+		final byte[] messageDigest = pdfSignatureService.digest(toSignDocument, parameters, digestAlgorithm);
+		TimeStampToken timeStampResponse = tspSource.getTimeStampResponse(digestAlgorithm, messageDigest);
+		final TimestampToken token = new TimestampToken(timeStampResponse, TimestampType.CONTENT_TIMESTAMP);
+		return token;
+	}
+
+	@Override
 	public ToBeSigned getDataToSign(final DSSDocument toSignDocument, final PAdESSignatureParameters parameters) throws DSSException {
 
 		assertSigningDateInCertificateValidityRange(parameters);
@@ -103,11 +114,9 @@ public class PAdESService extends AbstractSignatureService<PAdESSignatureParamet
 		final SignatureAlgorithm signatureAlgorithm = parameters.getSignatureAlgorithm();
 		final CustomContentSigner customContentSigner = new CustomContentSigner(signatureAlgorithm.getJCEId());
 
-		final PDFSignatureService pdfSignatureService = PdfObjFactory.getInstance().newPAdESSignatureService();
+		final PDFSignatureService pdfSignatureService = PdfObjFactory.newPAdESSignatureService();
 		pdfSignatureService.setPdfSignatureImageDir(signatureImageDir);
-		final InputStream inputStream = toSignDocument.openStream();
-		final byte[] messageDigest = pdfSignatureService.digest(inputStream, parameters, parameters.getDigestAlgorithm(), false);
-		Utils.closeQuietly(inputStream);
+		final byte[] messageDigest = pdfSignatureService.digest(toSignDocument, parameters, parameters.getDigestAlgorithm(), false);
 
 		SignerInfoGeneratorBuilder signerInfoGeneratorBuilder = padesCMSSignedDataBuilder.getSignerInfoGeneratorBuilder(parameters, messageDigest);
 
@@ -131,11 +140,9 @@ public class PAdESService extends AbstractSignatureService<PAdESSignatureParamet
 		final SignatureAlgorithm signatureAlgorithm = parameters.getSignatureAlgorithm();
 		final CustomContentSigner customContentSigner = new CustomContentSigner(signatureAlgorithm.getJCEId(), signatureValue.getValue());
 
-		final PDFSignatureService pdfSignatureService = PdfObjFactory.getInstance().newPAdESSignatureService();
+		final PDFSignatureService pdfSignatureService = PdfObjFactory.newPAdESSignatureService();
 		pdfSignatureService.setPdfSignatureImageDir(signatureImageDir);
-		InputStream inputStream = toSignDocument.openStream();
-		final byte[] messageDigest = pdfSignatureService.digest(inputStream, parameters, parameters.getDigestAlgorithm(), false);
-		Utils.closeQuietly(inputStream);
+		final byte[] messageDigest = pdfSignatureService.digest(toSignDocument, parameters, parameters.getDigestAlgorithm(), false);
 
 		final SignerInfoGeneratorBuilder signerInfoGeneratorBuilder = padesCMSSignedDataBuilder.getSignerInfoGeneratorBuilder(parameters, messageDigest);
 
@@ -152,11 +159,9 @@ public class PAdESService extends AbstractSignatureService<PAdESSignatureParamet
 			data = cadesLevelBaselineT.extendCMSSignatures(data, parameters);
 		}
 
-		final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 		final byte[] encodedData = CMSUtils.getEncoded(data);
-		inputStream = toSignDocument.openStream();
-		pdfSignatureService.sign(inputStream, encodedData, byteArrayOutputStream, parameters, parameters.getDigestAlgorithm(), false);
-		Utils.closeQuietly(inputStream);
+		
+		pdfSignatureService.sign(toSignDocument, encodedData, byteArrayOutputStream, parameters, parameters.getDigestAlgorithm(), false);
 		DSSDocument signature = new InMemoryDocument(byteArrayOutputStream.toByteArray());
 		signature.setMimeType(MimeType.PDF);
 
@@ -189,7 +194,7 @@ public class PAdESService extends AbstractSignatureService<PAdESSignatureParamet
 	 * @return the list of empty signature fields
 	 */
 	public List<String> getAvailableSignatureFields(DSSDocument document) {
-		PDFSignatureService pdfSignatureService = PdfObjFactory.getInstance().newPAdESSignatureService();
+		PDFSignatureService pdfSignatureService = PdfObjFactory.newPAdESSignatureService();
 		return pdfSignatureService.getAvailableSignatureFields(document);
 	}
 
@@ -203,7 +208,7 @@ public class PAdESService extends AbstractSignatureService<PAdESSignatureParamet
 	 * @return the pdf document with the new added signature field
 	 */
 	public DSSDocument addNewSignatureField(DSSDocument document, SignatureFieldParameters parameters) {
-		PDFSignatureService pdfSignatureService = PdfObjFactory.getInstance().newPAdESSignatureService();
+		PDFSignatureService pdfSignatureService = PdfObjFactory.newPAdESSignatureService();
 		return pdfSignatureService.addNewSignatureField(document, parameters);
 	}
 
