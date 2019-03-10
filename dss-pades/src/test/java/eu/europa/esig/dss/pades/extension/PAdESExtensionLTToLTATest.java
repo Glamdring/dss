@@ -20,8 +20,11 @@
  */
 package eu.europa.esig.dss.pades.extension;
 
+import org.junit.Ignore;
+
 import eu.europa.esig.dss.SignatureLevel;
 
+@Ignore
 public class PAdESExtensionLTToLTATest extends AbstractTestPAdESExtension {
 
 	@Override

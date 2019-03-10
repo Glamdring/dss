@@ -24,6 +24,7 @@ import java.io.File;
 import java.util.Date;
 
 import org.junit.Before;
+import org.junit.Ignore;
 
 import eu.europa.esig.dss.DSSDocument;
 import eu.europa.esig.dss.FileDocument;
@@ -32,6 +33,7 @@ import eu.europa.esig.dss.SignatureLevel;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.signature.DocumentSignatureService;
 
+@Ignore
 public class PAdESLevelLTTest extends AbstractPAdESTestSignature {
 
 	private DocumentSignatureService<PAdESSignatureParameters> service;
