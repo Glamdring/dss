@@ -621,8 +621,9 @@ class PdfBoxSignatureService implements PDFSignatureService {
 				}
 				
 				if (!entireFileConvered) {
-					signatures.clear();
-					throw new DSSException("At least one signature should cover the entire file");
+					//signatures.clear();
+					//throw new DSSException("At least one signature should cover the entire file");
+					LOG.warn("At least one signature should cover the entire file");
 				}
 				Collections.sort(signatures, new PdfSignatureOrDocTimestampInfoComparator());
 				linkSignatures(signatures);
