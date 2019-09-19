@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import eu.europa.esig.dss.pades.DSSFont;
 import eu.europa.esig.dss.pades.SignatureImageParameters;
 import eu.europa.esig.dss.pades.SignatureImageTextParameters;
+import eu.europa.esig.dss.pades.SignatureImageTextParameters.SignerTextPosition;
 import eu.europa.esig.dss.pdf.visible.CommonDrawerUtils;
 import eu.europa.esig.dss.pdf.visible.FontUtils;
 
@@ -57,7 +58,7 @@ public final class ImageTextWriter {
 		DSSFont dssFont = textParameters.getFont();
 		Font properFont = FontUtils.computeProperFont(dssFont.getJavaFont(), dssFont.getSize(), imageParameters.getDpi());
 		Dimension dimension = FontUtils.computeSize(properFont, textParameters.getText(), textParameters.getPadding());
-		return createTextImage(text != null ? text : textParameters.getText(), textParameters, properFont, dimension);
+		return createTextImage(text != null ? text : textParameters.getText(), textParameters, properFont, dimension, imageParameters);
 	}
 	
 	/**
@@ -71,7 +72,7 @@ public final class ImageTextWriter {
 		return FontUtils.computeSize(properFont, textParameters.getText(), textParameters.getPadding());
 	}
 
-	private static BufferedImage createTextImage(String text, final SignatureImageTextParameters textParameters, final Font font, final Dimension dimension) {
+	private static BufferedImage createTextImage(String text, final SignatureImageTextParameters textParameters, final Font font, final Dimension dimension, final SignatureImageParameters imageParameters) {
 		String[] lines = text.split("\n");
 
 		int imageType;
@@ -82,7 +83,7 @@ public final class ImageTextWriter {
 			imageType = BufferedImage.TYPE_INT_RGB;
 		}
 
-		BufferedImage img = new BufferedImage((int) (dimension.width + textParameters.getPadding()), dimension.height, imageType);
+		BufferedImage img = new BufferedImage(dimension.width, dimension.height, imageType);
 		Graphics2D g = img.createGraphics();
 		g.setFont(font);
 		FontMetrics fm = g.getFontMetrics(font);
@@ -90,11 +91,23 @@ public final class ImageTextWriter {
 		// Improve text rendering
 		CommonDrawerUtils.initRendering(g);
 
-		if (textParameters.getBackgroundColor() == null) {
-			g.setColor(Color.WHITE);
-		} else {
-			g.setColor(textParameters.getBackgroundColor());
-		}
+		Color textBackground = Color.WHITE;
+		if (textParameters.getSignerTextPosition() == SignerTextPosition.FOREGROUND) {
+            // fully transparent if two text images are going to be merged (their transparency is set when merging)
+            // partially-transparent if only the left image is going to be used
+            if (imageParameters.getTextRightParameters() != null) {
+                textBackground = new Color(255, 255, 255, 0);
+            } else {
+                textBackground = new Color(255, 255, 255, imageParameters.getBackgroundOpacity());
+            }
+            g.setColor(textBackground);
+        } else {
+    		if (textParameters.getBackgroundColor() == null) {
+    			g.setColor(Color.WHITE);
+    		} else {
+    			g.setColor(textParameters.getBackgroundColor());
+    		}
+        }
 		g.fillRect(0, 0, dimension.width, dimension.height);
 
 		if (textParameters.getTextColor() == null) {

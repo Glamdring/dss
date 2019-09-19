@@ -6,7 +6,6 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -55,6 +54,7 @@ public class DefaultDrawerImageUtils {
 	private DefaultDrawerImageUtils() {
 	}
 
+	
 	public static ImageAndResolution create(final SignatureImageParameters imageParameters, CertificateToken signingCertificate, Date signingDate) throws IOException {
         SignatureImageTextParameters textLeftParameters = imageParameters.getTextParameters();
 
@@ -68,20 +68,20 @@ public class DefaultDrawerImageUtils {
         }
 
         if (textLeftParameters != null && Utils.isStringNotEmpty(textLeftParameters.getText())) {
-            Color textBackground = textLeftParameters.getBackgroundColor();
-            if (textLeftParameters.getSignerTextPosition() == SignerTextPosition.FOREGROUND) {
-                // fully transparent if two text images are going to be merged (their transparency is set when merging)
-                // partially-transparent if only the left image is going to be used
-                if (imageParameters.getTextRightParameters() != null) {
-                    textBackground = new Color(255, 255, 255, 0);
-                } else {
-                    textBackground = new Color(255, 255, 255, imageParameters.getBackgroundOpacity());
-                }
+            
+            BufferedImage scaledImage = null;
+            if (image != null) {
+                scaledImage = getDpiScaledImage(image, imageParameters);
             }
-
+            
             String transformedText = transformText(textLeftParameters.getText(), imageParameters.getDateFormat(), signingDate, signingCertificate);
             BufferedImage buffImg = ImageTextWriter.createTextImage(imageParameters, textLeftParameters, transformedText);
 
+            if (scaledImage == null && buffImg != null) {
+                // reserve empty space if only text must be drawed
+                scaledImage = createEmptyImage(imageParameters, buffImg.getWidth(), buffImg.getHeight());
+            }
+            
             // in case there's a right side configured, join it with the left side of the text to form a single text image
             SignatureImageTextParameters textRightParameters = imageParameters.getTextRightParameters();
             if (textRightParameters != null) {
@@ -93,33 +93,36 @@ public class DefaultDrawerImageUtils {
                         textRightParameters.getSignerTextVerticalAlignment());
             }
 
-            if (image != null) {
-                try (InputStream is = image.openStream()) {
-                    if (is != null) {
-                        switch (textLeftParameters.getSignerTextPosition()) {
-                        case LEFT:
-                            buffImg = ImageMerger.mergeOnRight(ImageIO.read(is), buffImg, textLeftParameters.getBackgroundColor(),
-                                    textLeftParameters.getSignerTextVerticalAlignment());
-                            break;
-                        case RIGHT:
-                            buffImg = ImageMerger.mergeOnRight(buffImg, ImageIO.read(is), textLeftParameters.getBackgroundColor(),
-                                    textLeftParameters.getSignerTextVerticalAlignment());
-                            break;
-                        case TOP:
-                            buffImg = ImageMerger.mergeOnTop(ImageIO.read(is), buffImg, textLeftParameters.getBackgroundColor());
-                            break;
-                        case BOTTOM:
-                            buffImg = ImageMerger.mergeOnTop(buffImg, ImageIO.read(is), textLeftParameters.getBackgroundColor());
-                            break;
-                        case FOREGROUND:
-                            buffImg = ImageMerger.mergeOnBackground(buffImg, ImageIO.read(is));
-                            break;
-                        default:
-                            break;
-                        }
-                    }
-                }
+            float zoomFactor = imageParameters.getScaleFactor();
+            if (zoomFactor != 1) {
+                scaledImage = zoomImage(scaledImage, zoomFactor, zoomFactor);
             }
+            
+            SignerTextPosition signerNamePosition = textLeftParameters.getSignerTextPosition();
+            switch (signerNamePosition) {
+                case LEFT:
+                    scaledImage = writeImageToSignatureField(scaledImage, buffImg, imageParameters, false);
+                    buffImg = ImageMerger.mergeOnRight(buffImg, scaledImage, imageParameters.getBackgroundColor(), textLeftParameters.getSignerTextVerticalAlignment());
+                    break;
+                case RIGHT:
+                    scaledImage = writeImageToSignatureField(scaledImage, buffImg, imageParameters, false);
+                    buffImg = ImageMerger.mergeOnRight(scaledImage, buffImg, imageParameters.getBackgroundColor(), textLeftParameters.getSignerTextVerticalAlignment());
+                    break;
+                case TOP:
+                    scaledImage = writeImageToSignatureField(scaledImage, buffImg, imageParameters, true);
+                    buffImg = ImageMerger.mergeOnTop(scaledImage, buffImg, imageParameters.getBackgroundColor());
+                    break;
+                case BOTTOM:
+                    scaledImage = writeImageToSignatureField(scaledImage, buffImg, imageParameters, true);
+                    buffImg = ImageMerger.mergeOnTop(buffImg, scaledImage, imageParameters.getBackgroundColor());
+                    break;
+                case FOREGROUND:
+                    scaledImage = writeImageToSignatureField(scaledImage, buffImg, imageParameters, true);
+                    buffImg = ImageMerger.mergeOnBackground(buffImg, scaledImage);
+                default:
+                    throw new DSSException(String.format("The SignerNamePosition [%s] is not supported!", signerNamePosition.name()));
+            }
+            
             ImageAndResolution result = convertToInputStream(buffImg, CommonDrawerUtils.getDpi(imageParameters.getDpi()));
             result.setRatio(buffImg.getWidth() / buffImg.getHeight());
             return result;
