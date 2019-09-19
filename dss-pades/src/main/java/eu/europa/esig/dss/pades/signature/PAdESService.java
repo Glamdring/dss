@@ -95,7 +95,7 @@ public class PAdESService extends AbstractSignatureService<PAdESSignatureParamet
 	public TimestampToken getContentTimestamp(DSSDocument toSignDocument, PAdESSignatureParameters parameters) {
 		final PDFSignatureService pdfSignatureService = PdfObjFactory.newPAdESSignatureService();
 		final DigestAlgorithm digestAlgorithm = parameters.getContentTimestampParameters().getDigestAlgorithm();
-		final byte[] messageDigest = pdfSignatureService.digest(toSignDocument, parameters, digestAlgorithm);
+		final byte[] messageDigest = pdfSignatureService.digest(toSignDocument, parameters, digestAlgorithm, true);
 		TimeStampToken timeStampResponse = tspSource.getTimeStampResponse(digestAlgorithm, messageDigest);
 		final TimestampToken token = new TimestampToken(timeStampResponse, TimestampType.CONTENT_TIMESTAMP);
 		return token;
@@ -109,7 +109,7 @@ public class PAdESService extends AbstractSignatureService<PAdESSignatureParamet
 		final SignatureAlgorithm signatureAlgorithm = parameters.getSignatureAlgorithm();
 		final CustomContentSigner customContentSigner = new CustomContentSigner(signatureAlgorithm.getJCEId());
 
-		final byte[] messageDigest = computeDocumentDigest(toSignDocument, parameters);
+		final byte[] messageDigest = computeDocumentDigest(toSignDocument, parameters, false);
 
 		SignerInfoGeneratorBuilder signerInfoGeneratorBuilder = padesCMSSignedDataBuilder.getSignerInfoGeneratorBuilder(parameters, messageDigest);
 
@@ -124,9 +124,9 @@ public class PAdESService extends AbstractSignatureService<PAdESSignatureParamet
 		return new ToBeSigned(dataToSign);
 	}
 
-	protected byte[] computeDocumentDigest(final DSSDocument toSignDocument, final PAdESSignatureParameters parameters) {
+	protected byte[] computeDocumentDigest(final DSSDocument toSignDocument, final PAdESSignatureParameters parameters, boolean timestamping) {
 		final PDFSignatureService pdfSignatureService = PdfObjFactory.newPAdESSignatureService();
-		return pdfSignatureService.digest(toSignDocument, parameters, parameters.getDigestAlgorithm());
+		return pdfSignatureService.digest(toSignDocument, parameters, parameters.getDigestAlgorithm(), timestamping);
 	}
 
 	@Override
@@ -136,10 +136,10 @@ public class PAdESService extends AbstractSignatureService<PAdESSignatureParamet
 		assertSigningDateInCertificateValidityRange(parameters);
 
 		final SignatureLevel signatureLevel = parameters.getSignatureLevel();
-		final byte[] encodedData = generateCMSSignedData(toSignDocument, parameters, signatureValue);
+		final byte[] encodedData = generateCMSSignedData(toSignDocument, parameters, signatureValue, false);
 
 		final PDFSignatureService pdfSignatureService = PdfObjFactory.newPAdESSignatureService();
-		DSSDocument signature = pdfSignatureService.sign(toSignDocument, encodedData, parameters, parameters.getDigestAlgorithm());
+		DSSDocument signature = pdfSignatureService.sign(toSignDocument, encodedData, parameters, parameters.getDigestAlgorithm(), false);
 
 		final SignatureExtension<PAdESSignatureParameters> extension = getExtensionProfile(signatureLevel);
 		if ((signatureLevel != SignatureLevel.PAdES_BASELINE_B) && (signatureLevel != SignatureLevel.PAdES_BASELINE_T) && (extension != null)) {
@@ -151,12 +151,13 @@ public class PAdESService extends AbstractSignatureService<PAdESSignatureParamet
 		return signature;
 	}
 
-	protected byte[] generateCMSSignedData(final DSSDocument toSignDocument, final PAdESSignatureParameters parameters, final SignatureValue signatureValue) {
+	protected byte[] generateCMSSignedData(final DSSDocument toSignDocument, final PAdESSignatureParameters parameters, 
+			final SignatureValue signatureValue, boolean timestamping) {
 		final SignatureAlgorithm signatureAlgorithm = parameters.getSignatureAlgorithm();
 		final SignatureLevel signatureLevel = parameters.getSignatureLevel();
 		final CustomContentSigner customContentSigner = new CustomContentSigner(signatureAlgorithm.getJCEId(), signatureValue.getValue());
 
-		final byte[] messageDigest = computeDocumentDigest(toSignDocument, parameters);
+		final byte[] messageDigest = computeDocumentDigest(toSignDocument, parameters, timestamping);
 		final SignerInfoGeneratorBuilder signerInfoGeneratorBuilder = padesCMSSignedDataBuilder.getSignerInfoGeneratorBuilder(parameters, messageDigest);
 
 		final CMSSignedDataGenerator generator = padesCMSSignedDataBuilder.createCMSSignedDataGenerator(parameters, customContentSigner,

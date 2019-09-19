@@ -36,7 +36,7 @@ public class SignatureImageTextParameters {
 	 * Enum to define where to add a signer text inside a signature field relatively to an image
 	 */
 	public enum SignerTextPosition {
-		TOP, BOTTOM, RIGHT, LEFT
+		TOP, BOTTOM, RIGHT, LEFT, FOREGROUND
 	}
 
 	/**
@@ -101,6 +101,7 @@ public class SignatureImageTextParameters {
 	 */
 	private Color backgroundColor = DEFAULT_BACKGROUND_COLOR;
 
+	
 	/**
 	 * Returns a signer text position respectively to an image
 	 * @return {@link SignerTextPosition}
@@ -237,5 +238,4 @@ public class SignatureImageTextParameters {
 	public void setSize(int size) {
 		dssFont.setSize(size);
 	}
-
 }

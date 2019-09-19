@@ -44,11 +44,13 @@ public interface PDFSignatureService {
 	 *            the signature parameters
 	 * @param digestAlgorithm
 	 *            the digest algorithm to be used
+     * @param timestamping 
+     * 			  whether the currenet digest is needed for timestamping
 	 * @return the digest value
 	 * @throws DSSException
 	 *             if an error occurred
 	 */
-	byte[] digest(final DSSDocument toSignDocument, final PAdESSignatureParameters parameters, final DigestAlgorithm digestAlgorithm);
+	byte[] digest(final DSSDocument toSignDocument, final PAdESSignatureParameters parameters, final DigestAlgorithm digestAlgorithm, boolean timestamping);
 
 	/**
 	 * Signs a PDF document
@@ -61,10 +63,11 @@ public interface PDFSignatureService {
 	 *            the signature parameters
 	 * @param digestAlgorithm
 	 *            the digest algorithm to be used
+	 * @param timestamping
 	 * @throws DSSException
 	 *             if an error occurred
 	 */
-	DSSDocument sign(final DSSDocument pdfData, final byte[] signatureValue, final PAdESSignatureParameters parameters, final DigestAlgorithm digestAlgorithm);
+	DSSDocument sign(final DSSDocument pdfData, final byte[] signatureValue, final PAdESSignatureParameters parameters, final DigestAlgorithm digestAlgorithm, boolean timestamping);
 
 	/**
 	 * Retrieves and triggers validation of the signatures from a PDF document

@@ -46,13 +46,13 @@ public class PdfSignatureServiceTest {
 
 		@Override
 		public byte[] digest(DSSDocument toSignDocument, PAdESSignatureParameters parameters,
-				DigestAlgorithm digestAlgorithm) {
+				DigestAlgorithm digestAlgorithm, boolean timestamping) {
 			return null;
 		}
 
 		@Override
 		public DSSDocument sign(DSSDocument pdfData, byte[] signatureValue, PAdESSignatureParameters parameters,
-				DigestAlgorithm digestAlgorithm) {
+				DigestAlgorithm digestAlgorithm, boolean timestamping) {
 			return null;
 		}
 

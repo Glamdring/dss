@@ -213,7 +213,7 @@ public class ITextPDFSignatureService extends AbstractPDFSignatureService {
 
 	@Override
 	public byte[] digest(DSSDocument toSignDocument, PAdESSignatureParameters parameters,
-			DigestAlgorithm digestAlgorithm) {
+			DigestAlgorithm digestAlgorithm, boolean timestamping) {
 		try (InputStream is = toSignDocument.openStream(); ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 			PdfStamper stp = prepareStamper(is, baos, parameters);
 			PdfSignatureAppearance sap = stp.getSignatureAppearance();
@@ -229,7 +229,7 @@ public class ITextPDFSignatureService extends AbstractPDFSignatureService {
 
 	@Override
 	public DSSDocument sign(DSSDocument toSignDocument, byte[] signatureValue, PAdESSignatureParameters parameters,
-			DigestAlgorithm digestAlgorithm) {
+			DigestAlgorithm digestAlgorithm, boolean timestamping) {
 
 		try (InputStream is = toSignDocument.openStream(); ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 			PdfStamper stp = prepareStamper(is, baos, parameters);

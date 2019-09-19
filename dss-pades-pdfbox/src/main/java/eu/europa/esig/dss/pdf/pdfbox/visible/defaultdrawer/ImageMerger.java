@@ -23,6 +23,7 @@ package eu.europa.esig.dss.pdf.pdfbox.visible.defaultdrawer;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
 
 import org.slf4j.Logger;
@@ -110,6 +111,29 @@ public final class ImageMerger {
 		return combined;
 	}
 
+   public static BufferedImage mergeOnBackground(final BufferedImage front, final BufferedImage back) {
+        if (front == null) {
+            return back;
+        } else if (back == null) {
+            return front;
+        }
+
+        final int newImageWidth = Math.max(front.getWidth(), back.getWidth());
+        final int newImageHeight = Math.max(front.getHeight(), back.getHeight());
+        final int imageType = getImageType(front, back);
+
+        BufferedImage combined = new BufferedImage(newImageWidth, newImageHeight, imageType);
+        Graphics2D g = combined.createGraphics();
+
+        ImageUtils.initRendering(g);
+
+        g.drawImage(back.getScaledInstance(newImageWidth, newImageHeight, Image.SCALE_SMOOTH), 
+                0, 0, newImageWidth, newImageHeight, null);
+        g.drawImage(front, 0, 0, newImageWidth, newImageHeight, null);
+
+        return combined;
+    }
+	   
 	private static void fillBackground(Graphics g, final int width, final int heigth, final Color bgColor) {
 		g.setColor(bgColor);
 		g.fillRect(0, 0, width, heigth);

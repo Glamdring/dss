@@ -139,10 +139,10 @@ public abstract class AbstractPDFSignatureService implements PDFSignatureService
 	@Override
 	public DSSDocument timestamp(DSSDocument document, PAdESSignatureParameters parameters, TSPSource tspSource) {
 		final DigestAlgorithm timestampDigestAlgorithm = parameters.getSignatureTimestampParameters().getDigestAlgorithm();
-		final byte[] digest = digest(document, parameters, timestampDigestAlgorithm);
+		final byte[] digest = digest(document, parameters, timestampDigestAlgorithm, true);
 		final TimeStampToken timeStampToken = tspSource.getTimeStampResponse(timestampDigestAlgorithm, digest);
 		final byte[] encoded = DSSASN1Utils.getDEREncoded(timeStampToken);
-		return sign(document, encoded, parameters, timestampDigestAlgorithm);
+		return sign(document, encoded, parameters, timestampDigestAlgorithm, true);
 	}
 
 	@Override

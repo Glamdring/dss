@@ -44,7 +44,7 @@ public class ImageUtilsTest {
         SignatureImageParameters imageParameters = createSignatureImageParameters();
 
         Dimension optimalSizeDimension = ImageUtils.getOptimalSize(imageParameters);
-        ImageAndResolution imageAndResolution = DefaultDrawerImageUtils.create(imageParameters);
+        ImageAndResolution imageAndResolution = DefaultDrawerImageUtils.create(imageParameters, null, null);
 
         try (InputStream is = imageAndResolution.getInputStream()) {
             BufferedImage image = ImageIO.read(is);

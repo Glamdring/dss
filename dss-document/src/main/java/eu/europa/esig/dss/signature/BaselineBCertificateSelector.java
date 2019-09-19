@@ -57,10 +57,13 @@ public class BaselineBCertificateSelector extends CertificateReorderer {
 
 			List<CertificateToken> result = new LinkedList<CertificateToken>();
 			for (CertificateToken certificateToken : orderedCertificates) {
-				if (trustedCertSource.isTrusted(certificateToken)) {
-					// trust anchor and its parents are skipped
-					break;
-				}
+			    // in case this is a signature on validation report, do not skip trusted anchors
+                if (!parameters.isValidationReportSigning()) {
+    				if (trustedCertSource.isTrusted(certificateToken)) {
+    					// trust anchor and its parents are skipped
+    					break;
+    				}
+                }
 				result.add(certificateToken);
 			}
 

@@ -52,13 +52,12 @@ public final class ImageTextWriter {
 	 * @param imageParameters {@link SignatureImageParameters} to use
 	 * @return {@link BufferedImage} of the text picture
 	 */
-	public static BufferedImage createTextImage(final SignatureImageParameters imageParameters) {
+	public static BufferedImage createTextImage(final SignatureImageParameters imageParameters, SignatureImageTextParameters textParameters, String text) {
 		// Computing image size depending on the font
-		SignatureImageTextParameters textParameters = imageParameters.getTextParameters();
 		DSSFont dssFont = textParameters.getFont();
 		Font properFont = FontUtils.computeProperFont(dssFont.getJavaFont(), dssFont.getSize(), imageParameters.getDpi());
 		Dimension dimension = FontUtils.computeSize(properFont, textParameters.getText(), textParameters.getPadding());
-		return createTextImage(textParameters, properFont, dimension);
+		return createTextImage(text != null ? text : textParameters.getText(), textParameters, properFont, dimension);
 	}
 	
 	/**
@@ -72,8 +71,8 @@ public final class ImageTextWriter {
 		return FontUtils.computeSize(properFont, textParameters.getText(), textParameters.getPadding());
 	}
 
-	private static BufferedImage createTextImage(final SignatureImageTextParameters textParameters, final Font font, final Dimension dimension) {
-		String[] lines = textParameters.getText().split("\n");
+	private static BufferedImage createTextImage(String text, final SignatureImageTextParameters textParameters, final Font font, final Dimension dimension) {
+		String[] lines = text.split("\n");
 
 		int imageType;
 		if (isTransparent(textParameters.getTextColor(), textParameters.getBackgroundColor())) {
@@ -83,7 +82,7 @@ public final class ImageTextWriter {
 			imageType = BufferedImage.TYPE_INT_RGB;
 		}
 
-		BufferedImage img = new BufferedImage(dimension.width, dimension.height, imageType);
+		BufferedImage img = new BufferedImage((int) (dimension.width + textParameters.getPadding()), dimension.height, imageType);
 		Graphics2D g = img.createGraphics();
 		g.setFont(font);
 		FontMetrics fm = g.getFontMetrics(font);

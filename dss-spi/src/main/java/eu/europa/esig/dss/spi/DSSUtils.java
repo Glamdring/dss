@@ -36,6 +36,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -899,5 +900,19 @@ public final class DSSUtils {
 			throw new DSSException("Cannot read the InputStream!");
 		}
 	}
+
+	/**
+	 * Convert a byte array to long
+	 * @param bytes
+	 * @return long
+	 */
+	public static long toLong(final byte[] bytes) {
+        // Long.valueOf(new String(bytes)).longValue();
+        ByteBuffer buffer = ByteBuffer.allocate(8);
+        buffer.put(bytes, 0, Long.SIZE / 8);
+        // TODO: (Bob: 2014 Jan 22) To be checked if it is not platform dependent?
+        buffer.flip();// need flip
+        return buffer.getLong();
+    }
 
 }

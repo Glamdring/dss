@@ -22,6 +22,11 @@
 			<groupId>eu.europa.ec.joinup.sd-dss</groupId>
 			<artifactId>dss-enumerations</artifactId>
 		</dependency>
+		<dependency>
+		    <groupId>javax.xml.bind</groupId>
+		    <artifactId>jaxb-api</artifactId>
+		</dependency>
+		
 		
 		<!-- No other dependencies than in scope test  -->
 		<dependency>

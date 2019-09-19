@@ -38,9 +38,11 @@ public class DefaultPdfBoxVisibleSignatureDrawer extends AbstractPdfBoxSignature
 	@Override
 	public void draw() throws IOException {
 		// DSS-747. Using the DPI resolution to convert java size to dot
-		ImageAndResolution ires = DefaultDrawerImageUtils.create(parameters);
+		ImageAndResolution ires = DefaultDrawerImageUtils.create(parameters, null, null);
 
-		SignatureImageAndPosition signatureImageAndPosition = SignatureImageAndPositionProcessor.process(parameters, document, ires);
+		SignatureImageAndPosition signatureImageAndPosition = 
+		        SignatureImageAndPositionProcessor.process(parameters, document, ires, 
+		                parameters.getPage(), parameters.getxAxis(), parameters.getyAxis());
 
 		PDVisibleSignDesigner visibleSig = new PDVisibleSignDesigner(document, new ByteArrayInputStream(signatureImageAndPosition.getSignatureImage()),
 				parameters.getPage());

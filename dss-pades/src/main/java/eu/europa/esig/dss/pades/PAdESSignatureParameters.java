@@ -20,6 +20,8 @@
  */
 package eu.europa.esig.dss.pades;
 
+import java.util.List;
+
 import eu.europa.esig.dss.cades.CAdESSignatureParameters;
 import eu.europa.esig.dss.enumerations.SignatureForm;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
@@ -61,6 +63,11 @@ public class PAdESSignatureParameters extends CAdESSignatureParameters {
 	 */
 	private SignatureImageParameters signatureImageParameters;
 
+	/**
+	 * This attribute is used to create visible stamps in PAdES form
+	 */
+	private List<SignatureImageParameters> stampImageParameters;
+	
 	/**
 	 * This attribute allows to override the used Filter for a Timestamp.
 	 * 
@@ -217,4 +224,11 @@ public class PAdESSignatureParameters extends CAdESSignatureParameters {
 		this.permission = permission;
 	}
 
+	public List<SignatureImageParameters> getStampImageParameters() {
+		return stampImageParameters;
+	}
+
+	public void setStampImageParameters(List<SignatureImageParameters> stampImageParameters) {
+		this.stampImageParameters = stampImageParameters;
+	}
 }

@@ -67,6 +67,12 @@ public abstract class AbstractSignatureParameters extends AbstractSerializableSi
 	 */
 	private List<TimestampToken> contentTimestamps;
 
+	
+	/**
+     * Indicates whether this request is for signing validation reports
+     */
+    private boolean validationReportSigning;
+    
 	/**
 	 * Returns the list of the {@code TimestampToken} to be incorporated within the signature and representing the
 	 * content-timestamp.
@@ -205,4 +211,11 @@ public abstract class AbstractSignatureParameters extends AbstractSerializableSi
 		deterministicId = null;
 	}
 
+    public boolean isValidationReportSigning() {
+        return validationReportSigning;
+    }
+
+    public void setValidationReportSigning(boolean validationReportSigning) {
+        this.validationReportSigning = validationReportSigning;
+    }
 }

@@ -23,6 +23,7 @@ package eu.europa.esig.dss.pades;
 import java.awt.Color;
 
 import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.model.SignatureImagePageRange;
 import eu.europa.esig.dss.pdf.visible.CommonDrawerUtils;
 
 /**
@@ -106,17 +107,36 @@ public class SignatureImageParameters {
 		ROTATE_270;
 	}
 
+	public enum VisualSignaturePagePlacement {
+		SINGLE_PAGE, ALL_PAGES, RANGE
+	}
+	
 	/**
 	 * This variable contains the image to use (company logo,...)
 	 */
 	private DSSDocument image;
 
 	/**
+	 * byte array representing the image
+	 */
+	
+	private byte[] imageDocument;
+	/**
+	 * On which pages should the signature be placed
+	 */
+	private VisualSignaturePagePlacement pagePlacement = VisualSignaturePagePlacement.SINGLE_PAGE;
+	
+	/**
 	 * This variable defines the page where the image will appear (1st page by
 	 * default)
 	 */
 	private int page = DEFAULT_PAGE;
 
+	/**
+	 * Alternative to the "page" parameter - specify a page range
+	 */
+	private SignatureImagePageRange pageRange;
+	
 	/**
 	 * This variable defines the position of the image in the PDF page (X axis)
 	 */
@@ -176,6 +196,22 @@ public class SignatureImageParameters {
 	 */
 	private SignatureImageTextParameters textParameters;
 
+	/**
+     * This variable is use to define the text to generate on the right side of the
+     * image (leave blank if you don't need two columns)
+     */
+    private SignatureImageTextParameters textRightParameters;
+
+
+    private String dateFormat = "dd.MM.yyyy HH:mm XXX";
+
+
+    /**
+     * How opaque should the background image be in case the image is placed in the background.
+     * 0 = fully transparent, 255 = fully opaque
+     */
+    private int backgroundOpacity;
+    
 	/**
 	 * Returns a {@code DSSDocument} image defined for displaying on the signature field
 	 * @return {@link DSSDocument} image
@@ -400,5 +436,61 @@ public class SignatureImageParameters {
      */
 	public void setAlignmentVertical(VisualSignatureAlignmentVertical alignmentVertical) {
 		this.alignmentVertical = alignmentVertical;
+	}
+
+	public VisualSignaturePagePlacement getPagePlacement() {
+		return pagePlacement;
+	}
+
+	public void setPagePlacement(VisualSignaturePagePlacement pagePlacement) {
+		this.pagePlacement = pagePlacement;
+	}
+
+	public SignatureImagePageRange getPageRange() {
+		return pageRange;
+	}
+
+	public void setPageRange(SignatureImagePageRange pageRange) {
+		this.pageRange = pageRange;
+	}
+
+	public SignatureImageTextParameters getTextRightParameters() {
+		return textRightParameters;
+	}
+
+	public void setTextRightParameters(SignatureImageTextParameters textRightParameters) {
+		this.textRightParameters = textRightParameters;
+	}
+
+	public String getDateFormat() {
+		return dateFormat;
+	}
+
+	public void setDateFormat(String dateFormat) {
+		this.dateFormat = dateFormat;
+	}
+
+	public int getBackgroundOpacity() {
+		return backgroundOpacity;
+	}
+
+	public void setBackgroundOpacity(int backgroundOpacity) {
+		this.backgroundOpacity = backgroundOpacity;
+	}
+
+	public VisualSignatureAlignmentHorizontal getAlignmentHorizontal() {
+		return alignmentHorizontal;
+	}
+
+	public VisualSignatureAlignmentVertical getAlignmentVertical() {
+		return alignmentVertical;
+	}
+
+	public byte[] getImageDocument() {
+		return imageDocument;
+	}
+
+	public void setImageDocument(byte[] imageDocument) {
+		this.imageDocument = imageDocument;
 	}
 }

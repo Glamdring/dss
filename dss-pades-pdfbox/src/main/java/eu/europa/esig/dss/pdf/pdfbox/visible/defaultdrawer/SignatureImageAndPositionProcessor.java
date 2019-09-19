@@ -44,21 +44,21 @@ public final class SignatureImageAndPositionProcessor {
     private static final String SUPPORTED_VERTICAL_ALIGNMENT_ERROR_MESSAGE = "not supported vertical alignment: ";
     private static final String SUPPORTED_HORIZONTAL_ALIGNMENT_ERROR_MESSAGE = "not supported horizontal alignment: ";
 
-    public static SignatureImageAndPosition process(final SignatureImageParameters signatureImageParameters, 
-    		final PDDocument doc, final ImageAndResolution ires) throws IOException {
+    public static SignatureImageAndPosition process(final SignatureImageParameters signatureImageParameters,
+            final PDDocument doc, final ImageAndResolution ires, int page, float x, float y) throws IOException {
 		try (InputStream is = ires.getInputStream()) {
 			
 			BufferedImage visualImageSignature = ImageUtils.read(is);
 			
-			PDPage pdPage = doc.getPages().get(signatureImageParameters.getPage() - 1);
+			PDPage pdPage = doc.getPages().get(page);
 
 			int rotate = ImageRotationUtils.getRotation(signatureImageParameters.getRotation(), pdPage);
 			if (rotate != ImageRotationUtils.ANGLE_360) {
 				visualImageSignature = ImageUtils.rotate(visualImageSignature, rotate);
 			}
 
-			float x = processX(rotate, ires, visualImageSignature, pdPage, signatureImageParameters);
-			float y = processY(rotate, ires, visualImageSignature, pdPage, signatureImageParameters);
+			x = processX(rotate, ires, visualImageSignature, pdPage, signatureImageParameters);
+			y = processY(rotate, ires, visualImageSignature, pdPage, signatureImageParameters);
 
 			ByteArrayOutputStream visualImageSignatureOutputStream = new ByteArrayOutputStream();
 			String imageType = "jpg";
@@ -73,7 +73,6 @@ public final class SignatureImageAndPositionProcessor {
 
     private static float processX(int rotation, ImageAndResolution ires, BufferedImage visualImageSignature, PDPage pdPage, SignatureImageParameters signatureImageParameters) {
         float x;
-        
         PDRectangle pageBox = pdPage.getMediaBox();
         float width = getWidth(signatureImageParameters, visualImageSignature, ires, ImageRotationUtils.isSwapOfDimensionsRequired(rotation));
 

@@ -33,6 +33,7 @@ public class ImageAndResolution {
 	private int xDpi;
 	private int yDpi;
 	private DSSDocument image;
+	private int ratio;
 
 	public ImageAndResolution(DSSDocument image, int xDpi, int yDpi) {
 		this.xDpi = xDpi;
@@ -54,6 +55,15 @@ public class ImageAndResolution {
 
 	public float toYPoint(float y) {
 		return CommonDrawerUtils.toDpiAxisPoint(y, yDpi);
+	}
+	
+
+	public int getRatio() {
+		return ratio;
+	}
+
+	public void setRatio(int ratio) {
+		this.ratio = ratio;
 	}
 
 	@Override
