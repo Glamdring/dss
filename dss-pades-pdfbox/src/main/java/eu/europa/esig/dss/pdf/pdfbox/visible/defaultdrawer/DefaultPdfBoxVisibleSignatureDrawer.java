@@ -41,8 +41,7 @@ public class DefaultPdfBoxVisibleSignatureDrawer extends AbstractPdfBoxSignature
 		ImageAndResolution ires = DefaultDrawerImageUtils.create(parameters, null, null);
 
 		SignatureImageAndPosition signatureImageAndPosition = 
-		        SignatureImageAndPositionProcessor.process(parameters, document, ires, 
-		                parameters.getPage(), parameters.getxAxis(), parameters.getyAxis());
+		        SignatureImageAndPositionProcessor.process(parameters, document, ires, parameters.getPage() - 1);
 
 		PDVisibleSignDesigner visibleSig = new PDVisibleSignDesigner(document, new ByteArrayInputStream(signatureImageAndPosition.getSignatureImage()),
 				parameters.getPage());

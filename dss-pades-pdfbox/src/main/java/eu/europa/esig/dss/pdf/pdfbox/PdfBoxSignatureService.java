@@ -212,7 +212,6 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
             for (SignatureImageParameters parameters : parametersList) {
                 if (parameters != null && placeSignatureOnPage(page, totalPages, parameters)) {
                     PDPage currentPage = pdDocument.getPage(getPage(parameters.getPage(), pdDocument.getNumberOfPages()));
-                    float x = DefaultDrawerImageUtils.convertNegativeAxisValue(parameters.getxAxis(), currentPage.getCropBox().getWidth());
                     float y = DefaultDrawerImageUtils.convertNegativeAxisValue(parameters.getyAxis(), currentPage.getCropBox().getHeight());
 
                     ImageAndResolution ires = DefaultDrawerImageUtils.create(parameters, 
@@ -228,7 +227,7 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
                     }
 
                     SignatureImageAndPosition position = SignatureImageAndPositionProcessor.process(
-                            parameters, pdDocument, ires, getPage(parameters.getPage(), pdDocument.getNumberOfPages()), x, y);
+                            parameters, pdDocument, ires, getPage(parameters.getPage(), pdDocument.getNumberOfPages()));
 
                     // we need to invert the Y so that it starts from the top rather than from the bottom
                     y = currentPage.getCropBox().getHeight() - position.getY() - parameters.getHeight();
@@ -294,11 +293,9 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
 
             int pageIndex = getPage(signatureImageParameters.getPage(), doc.getNumberOfPages());
             PDPage currentPage = doc.getPage(pageIndex);
-            float x = DefaultDrawerImageUtils.convertNegativeAxisValue(signatureImageParameters.getxAxis(), currentPage.getCropBox().getWidth());
-            float y = DefaultDrawerImageUtils.convertNegativeAxisValue(signatureImageParameters.getyAxis(), currentPage.getCropBox().getHeight());
-
+            
             SignatureImageAndPosition signatureImageAndPosition = SignatureImageAndPositionProcessor
-                    .process(signatureImageParameters, doc, ires, getPage(signatureImageParameters.getPage(), doc.getNumberOfPages()), x, y);
+                    .process(signatureImageParameters, doc, ires, getPage(signatureImageParameters.getPage(), doc.getNumberOfPages()));
 
             PDVisibleSignDesigner visibleSig = new PDVisibleSignDesigner(doc,
                     new ByteArrayInputStream(signatureImageAndPosition.getSignatureImage()), 
