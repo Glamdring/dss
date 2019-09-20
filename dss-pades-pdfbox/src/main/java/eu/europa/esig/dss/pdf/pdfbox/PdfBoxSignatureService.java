@@ -101,6 +101,7 @@ import eu.europa.esig.dss.pdf.PdfSignatureOrDocTimestampInfo;
 import eu.europa.esig.dss.pdf.pdfbox.visible.PdfBoxSignatureDrawer;
 import eu.europa.esig.dss.pdf.pdfbox.visible.PdfBoxSignatureDrawerFactory;
 import eu.europa.esig.dss.pdf.pdfbox.visible.defaultdrawer.DefaultDrawerImageUtils;
+import eu.europa.esig.dss.pdf.pdfbox.visible.defaultdrawer.DefaultPdfBoxVisibleSignatureDrawer;
 import eu.europa.esig.dss.pdf.pdfbox.visible.defaultdrawer.SignatureImageAndPosition;
 import eu.europa.esig.dss.pdf.pdfbox.visible.defaultdrawer.SignatureImageAndPositionProcessor;
 import eu.europa.esig.dss.pdf.visible.ImageAndResolution;
@@ -211,7 +212,7 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
         for (int page = 0; page < totalPages; page++) {
             for (SignatureImageParameters parameters : parametersList) {
                 if (parameters != null && placeSignatureOnPage(page, totalPages, parameters)) {
-                    PDPage currentPage = pdDocument.getPage(getPage(parameters.getPage(), pdDocument.getNumberOfPages()));
+                    PDPage currentPage = pdDocument.getPage(DefaultPdfBoxVisibleSignatureDrawer.getPage(parameters.getPage(), pdDocument.getNumberOfPages()));
                     float y = DefaultDrawerImageUtils.convertNegativeAxisValue(parameters.getyAxis(), currentPage.getCropBox().getHeight());
 
                     ImageAndResolution ires = DefaultDrawerImageUtils.create(parameters, 
@@ -227,7 +228,7 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
                     }
 
                     SignatureImageAndPosition position = SignatureImageAndPositionProcessor.process(
-                            parameters, pdDocument, ires, getPage(parameters.getPage(), pdDocument.getNumberOfPages()));
+                            parameters, pdDocument, ires, DefaultPdfBoxVisibleSignatureDrawer.getPage(parameters.getPage(), pdDocument.getNumberOfPages()));
 
                     // we need to invert the Y so that it starts from the top rather than from the bottom
                     y = currentPage.getCropBox().getHeight() - position.getY() - parameters.getHeight();
@@ -255,7 +256,7 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
 
 	private boolean placeSignatureOnPage(int page, int total, SignatureImageParameters signatureImageParameters) {
         if (signatureImageParameters.getPagePlacement() == VisualSignaturePagePlacement.SINGLE_PAGE
-                && page == getPage(signatureImageParameters.getPage(), total)) {
+                && page == DefaultPdfBoxVisibleSignatureDrawer.getPage(signatureImageParameters.getPage(), total)) {
             return true;
         } else if (signatureImageParameters.getPagePlacement() == VisualSignaturePagePlacement.ALL_PAGES) {
             return true;
@@ -273,10 +274,6 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
         return false;
     }
 
-    private int getPage(int configuredPage, int total) {
-        // negative values are counted from the end of the document, e.g. -1 is the last page.
-        return configuredPage >= 0 ? configuredPage - 1 : total - Math.abs(configuredPage);
-    }
 
     protected void fillImageParameters(final PDDocument doc, final PAdESSignatureParameters signatureParameters,
             SignatureOptions options) throws IOException {
@@ -291,11 +288,11 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
             // DSS-747. Using the DPI resolution to convert java size to dot
             ImageAndResolution ires = DefaultDrawerImageUtils.create(signatureImageParameters, signingCertificate, signingDate);
 
-            int pageIndex = getPage(signatureImageParameters.getPage(), doc.getNumberOfPages());
+            int pageIndex = DefaultPdfBoxVisibleSignatureDrawer.getPage(signatureImageParameters.getPage(), doc.getNumberOfPages());
             PDPage currentPage = doc.getPage(pageIndex);
             
             SignatureImageAndPosition signatureImageAndPosition = SignatureImageAndPositionProcessor
-                    .process(signatureImageParameters, doc, ires, getPage(signatureImageParameters.getPage(), doc.getNumberOfPages()));
+                    .process(signatureImageParameters, doc, ires, DefaultPdfBoxVisibleSignatureDrawer.getPage(signatureImageParameters.getPage(), doc.getNumberOfPages()));
 
             PDVisibleSignDesigner visibleSig = new PDVisibleSignDesigner(doc,
                     new ByteArrayInputStream(signatureImageAndPosition.getSignatureImage()), 
@@ -327,7 +324,7 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
             signatureProperties.visualSignEnabled(true).setPdVisibleSignature(visibleSig).buildSignature();
 
             options.setVisualSignature(signatureProperties);
-            options.setPage(getPage(signatureImageParameters.getPage(), doc.getNumberOfPages())); // DSS-1138
+            options.setPage(DefaultPdfBoxVisibleSignatureDrawer.getPage(signatureImageParameters.getPage(), doc.getNumberOfPages())); // DSS-1138
         }
     }
         

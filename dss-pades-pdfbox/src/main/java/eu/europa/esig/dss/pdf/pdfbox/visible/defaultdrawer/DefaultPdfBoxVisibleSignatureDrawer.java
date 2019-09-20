@@ -40,11 +40,11 @@ public class DefaultPdfBoxVisibleSignatureDrawer extends AbstractPdfBoxSignature
 		// DSS-747. Using the DPI resolution to convert java size to dot
 		ImageAndResolution ires = DefaultDrawerImageUtils.create(parameters, null, null);
 
+		int page = getPage(parameters.getPage(), document.getNumberOfPages());
 		SignatureImageAndPosition signatureImageAndPosition = 
-		        SignatureImageAndPositionProcessor.process(parameters, document, ires, parameters.getPage() - 1);
+		        SignatureImageAndPositionProcessor.process(parameters, document, ires, page);
 
-		PDVisibleSignDesigner visibleSig = new PDVisibleSignDesigner(document, new ByteArrayInputStream(signatureImageAndPosition.getSignatureImage()),
-				parameters.getPage());
+		PDVisibleSignDesigner visibleSig = new PDVisibleSignDesigner(document, new ByteArrayInputStream(signatureImageAndPosition.getSignatureImage()), page);
 
 		visibleSig.xAxis(signatureImageAndPosition.getX());
 		visibleSig.yAxis(signatureImageAndPosition.getY());
@@ -90,4 +90,8 @@ public class DefaultPdfBoxVisibleSignatureDrawer extends AbstractPdfBoxSignature
 		return COSName.DEVICERGB.getName();
 	}
 
+	public static int getPage(int configuredPage, int total) {
+        // negative values are counted from the end of the document, e.g. -1 is the last page.
+        return configuredPage >= 0 ? configuredPage - 1 : total - Math.abs(configuredPage);
+    }
 }

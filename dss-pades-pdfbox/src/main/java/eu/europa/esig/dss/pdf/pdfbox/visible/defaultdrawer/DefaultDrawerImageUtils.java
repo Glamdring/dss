@@ -119,6 +119,7 @@ public class DefaultDrawerImageUtils {
                 case FOREGROUND:
                     scaledImage = writeImageToSignatureField(scaledImage, buffImg, imageParameters, true);
                     buffImg = ImageMerger.mergeOnBackground(buffImg, scaledImage);
+                    break;
                 default:
                     throw new DSSException(String.format("The SignerNamePosition [%s] is not supported!", signerNamePosition.name()));
             }
