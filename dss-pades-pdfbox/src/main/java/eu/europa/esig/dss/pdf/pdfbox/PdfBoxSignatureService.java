@@ -105,7 +105,6 @@ import eu.europa.esig.dss.pdf.pdfbox.visible.defaultdrawer.DefaultPdfBoxVisibleS
 import eu.europa.esig.dss.pdf.pdfbox.visible.defaultdrawer.SignatureImageAndPosition;
 import eu.europa.esig.dss.pdf.pdfbox.visible.defaultdrawer.SignatureImageAndPositionProcessor;
 import eu.europa.esig.dss.pdf.visible.ImageAndResolution;
-import eu.europa.esig.dss.pdf.visible.ImageUtils;
 import eu.europa.esig.dss.spi.DSSUtils;
 import eu.europa.esig.dss.spi.x509.CertificatePool;
 import eu.europa.esig.dss.spi.x509.revocation.crl.CRLToken;
@@ -136,7 +135,7 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
 		final byte[] signatureValue = DSSUtils.EMPTY_BYTE_ARRAY;
 		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 				InputStream is = toSignDocument.openStream();
-				PDDocument pdDocument = PDDocument.load(is)) {
+				PDDocument pdDocument = loadDocument(parameters, timestamping, is)) {
 			final byte[] digest = signDocumentAndReturnDigest(parameters, signatureValue, outputStream, pdDocument, digestAlgorithm);
 			if (LOG.isDebugEnabled()) {
 				LOG.debug("Base64 messageDigest : {}", Utils.toBase64(digest));
@@ -406,7 +405,7 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
 
 		try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				InputStream is = toSignDocument.openStream();
-				PDDocument pdDocument = PDDocument.load(is)) {
+				PDDocument pdDocument = loadDocument(parameters, timestamping, is)) {
 
 			signDocumentAndReturnDigest(parameters, signatureValue, baos, pdDocument, digestAlgorithm);
 
