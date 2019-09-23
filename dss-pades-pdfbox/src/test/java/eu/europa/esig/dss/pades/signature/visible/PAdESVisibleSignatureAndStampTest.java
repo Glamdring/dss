@@ -19,6 +19,7 @@ import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.enumerations.SignaturePackaging;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.InMemoryDocument;
+import eu.europa.esig.dss.model.MimeType;
 import eu.europa.esig.dss.model.SignatureImagePageRange;
 import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.model.ToBeSigned;
@@ -30,7 +31,6 @@ import eu.europa.esig.dss.pades.SignatureImageTextParameters.SignerTextHorizonta
 import eu.europa.esig.dss.pades.SignatureImageTextParameters.SignerTextPosition;
 import eu.europa.esig.dss.pades.signature.PAdESService;
 import eu.europa.esig.dss.test.signature.PKIFactoryAccess;
-import eu.europa.esig.dss.validation.CommonCertificateVerifier;
 
 public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 
@@ -40,8 +40,9 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		DSSDocument document = new InMemoryDocument(new ByteArrayInputStream(pdfBytes));
 		byte[] imageBytes = IOUtils.toByteArray(PAdESVisibleSignatureAndStampTest.class.getResourceAsStream("/small-red.jpg"));
 		DSSDocument image = new InMemoryDocument(new ByteArrayInputStream(imageBytes));
-
-		DSSDocument signedDocument = signDocumentWithStamps(document, image);
+		image.setMimeType(MimeType.JPEG);
+		
+		DSSDocument signedDocument = signDocumentWithStamps(document, image, 25);
 
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		IOUtils.copy(signedDocument.openStream(), baos);
@@ -64,9 +65,10 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		DSSDocument document = new InMemoryDocument(new ByteArrayInputStream(pdfBytes));
 		byte[] imageBytes = IOUtils.toByteArray(PAdESVisibleSignatureAndStampTest.class.getResourceAsStream("/small-red.jpg"));
 		DSSDocument image = new InMemoryDocument(new ByteArrayInputStream(imageBytes));
+		image.setMimeType(MimeType.JPEG);
 
-		DSSDocument signedDocument = signDocumentWithStamps(document, image);
-		DSSDocument twiceSignedDocument = signDocumentWithStamps(signedDocument, image);
+		DSSDocument signedDocument = signDocumentWithStamps(document, image, 25);
+		DSSDocument twiceSignedDocument = signDocumentWithStamps(signedDocument, image, 125);
 
 		PDDocument twiceSigned = PDDocument.load(twiceSignedDocument.openStream());
 		assertThat(twiceSigned.getSignatureFields().size(), equalTo(6)); // two for signatures and 2*2 for timestamps
@@ -77,7 +79,7 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 //		}
 	}
 
-	private DSSDocument signDocumentWithStamps(DSSDocument document, DSSDocument image) {
+	private DSSDocument signDocumentWithStamps(DSSDocument document, DSSDocument image, int x) {
 		PAdESSignatureParameters params = new PAdESSignatureParameters();
 		params.setSignatureSubFilter("adbe.pkcs7.detached");
 
@@ -91,12 +93,12 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		params.getSignatureImageParameters().setTextRightParameters(new SignatureImageTextParameters());
 		params.getSignatureImageParameters().getTextRightParameters().setText("Signature created by\nTest\nDate: %DateTimeWithTimeZone%");
 		params.getSignatureImageParameters().setPageRange(new SignatureImagePageRange());
-		params.getSignatureImageParameters().setxAxis(25);
+		params.getSignatureImageParameters().setxAxis(x);
 		params.getSignatureImageParameters().setyAxis(-55);
 		params.getSignatureImageParameters().setWidth(200);
 		params.getSignatureImageParameters().setPagePlacement(VisualSignaturePagePlacement.SINGLE_PAGE);
 		params.getSignatureImageParameters().setPage(-1);
-
+		
 		SignatureImageParameters stampParams = new SignatureImageParameters();
 		stampParams.setImage(image);
 		stampParams.setTextParameters(new SignatureImageTextParameters());
@@ -107,7 +109,7 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		stampParams.setTextRightParameters(new SignatureImageTextParameters());
 		stampParams.getTextRightParameters().setText("Signature created by\nTest\nDate: %DateTimeWithTimeZone%");
 		stampParams.setPageRange(new SignatureImagePageRange());
-		stampParams.setxAxis(25);
+		stampParams.setxAxis(x);
 		stampParams.setyAxis(-55);
 		stampParams.setWidth(200);
 		stampParams.setPagePlacement(VisualSignaturePagePlacement.RANGE);
@@ -124,7 +126,7 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		params.setSignaturePackaging(SignaturePackaging.ENVELOPING);
 		params.setDigestAlgorithm(DigestAlgorithm.SHA512);
 
-		PAdESService service = new PAdESService(new CommonCertificateVerifier());
+		PAdESService service = new PAdESService(getCompleteCertificateVerifier());
 		service.setTspSource(getGoodTsa());
 		ToBeSigned dataToSign = service.getDataToSign(document, params);
 		SignatureValue signatureValue = getToken().sign(dataToSign, params.getDigestAlgorithm(), getPrivateKeyEntry());
