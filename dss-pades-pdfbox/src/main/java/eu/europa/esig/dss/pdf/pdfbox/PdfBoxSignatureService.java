@@ -105,6 +105,7 @@ import eu.europa.esig.dss.pdf.pdfbox.visible.defaultdrawer.DefaultPdfBoxVisibleS
 import eu.europa.esig.dss.pdf.pdfbox.visible.defaultdrawer.SignatureImageAndPosition;
 import eu.europa.esig.dss.pdf.pdfbox.visible.defaultdrawer.SignatureImageAndPositionProcessor;
 import eu.europa.esig.dss.pdf.visible.ImageAndResolution;
+import eu.europa.esig.dss.pdf.visible.ImageUtils;
 import eu.europa.esig.dss.spi.DSSUtils;
 import eu.europa.esig.dss.spi.x509.CertificatePool;
 import eu.europa.esig.dss.spi.x509.revocation.crl.CRLToken;
@@ -163,6 +164,10 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
                 // reset existing annotations (needed in order to have the stamps added)
                 page.setAnnotations(null);
             }
+            // adjust coordinates (make negative values relative to the bottom or right edge)
+            // according to the first page
+            adjustCoordinateParameters(parameters, pdDocument.getPage(0));
+            
             // reset document outline (needed in order to have the stamps added)
             pdDocument.getDocumentCatalog().setDocumentOutline(null);
             List<PDAnnotation> annotations = addStamps(pdDocument, parameters);
@@ -288,10 +293,9 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
             ImageAndResolution ires = DefaultDrawerImageUtils.create(signatureImageParameters, signingCertificate, signingDate);
 
             int pageIndex = DefaultPdfBoxVisibleSignatureDrawer.getPage(signatureImageParameters.getPage(), doc.getNumberOfPages());
-            PDPage currentPage = doc.getPage(pageIndex);
             
             SignatureImageAndPosition signatureImageAndPosition = SignatureImageAndPositionProcessor
-                    .process(signatureImageParameters, doc, ires, DefaultPdfBoxVisibleSignatureDrawer.getPage(signatureImageParameters.getPage(), doc.getNumberOfPages()));
+                    .process(signatureImageParameters, doc, ires, pageIndex);
 
             PDVisibleSignDesigner visibleSig = new PDVisibleSignDesigner(doc,
                     new ByteArrayInputStream(signatureImageAndPosition.getSignatureImage()), 
@@ -321,9 +325,9 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
 
             PDVisibleSigProperties signatureProperties = new PDVisibleSigProperties();
             signatureProperties.visualSignEnabled(true).setPdVisibleSignature(visibleSig).buildSignature();
-
+            
             options.setVisualSignature(signatureProperties);
-            options.setPage(DefaultPdfBoxVisibleSignatureDrawer.getPage(signatureImageParameters.getPage(), doc.getNumberOfPages())); // DSS-1138
+            options.setPage(pageIndex); // DSS-1138
         }
     }
         
@@ -417,7 +421,21 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
 		}
 	}
 
-	private byte[] signDocumentAndReturnDigest(final PAdESSignatureParameters parameters, final byte[] signatureBytes, final OutputStream fileOutputStream,
+	private void adjustCoordinateParameters(PAdESSignatureParameters parameters, PDPage currentPage) {
+	    float x = ImageUtils.convertNegativeAxisValue(parameters.getSignatureImageParameters().getxAxis(), currentPage.getCropBox().getWidth());
+        float y = ImageUtils.convertNegativeAxisValue(parameters.getSignatureImageParameters().getyAxis(), currentPage.getCropBox().getHeight());
+        parameters.getSignatureImageParameters().setxAxis(x);
+        parameters.getSignatureImageParameters().setyAxis(y);
+        for (SignatureImageParameters params : parameters.getStampImageParameters()) {
+            float stampX = ImageUtils.convertNegativeAxisValue(params.getxAxis(), currentPage.getCropBox().getWidth());
+            float stampY = ImageUtils.convertNegativeAxisValue(params.getyAxis(), currentPage.getCropBox().getHeight());
+            params.setxAxis(stampX);
+            params.setyAxis(stampY);
+        }
+
+    }
+
+    private byte[] signDocumentAndReturnDigest(final PAdESSignatureParameters parameters, final byte[] signatureBytes, final OutputStream fileOutputStream,
 			final PDDocument pdDocument, final DigestAlgorithm digestAlgorithm) {
 
 		final MessageDigest digest = DSSUtils.getMessageDigest(digestAlgorithm);

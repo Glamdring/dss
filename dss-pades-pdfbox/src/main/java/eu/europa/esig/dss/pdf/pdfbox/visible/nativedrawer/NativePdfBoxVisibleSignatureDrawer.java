@@ -39,6 +39,7 @@ import eu.europa.esig.dss.pades.SignatureImageParameters;
 import eu.europa.esig.dss.pades.SignatureImageTextParameters;
 import eu.europa.esig.dss.pdf.pdfbox.visible.AbstractPdfBoxSignatureDrawer;
 import eu.europa.esig.dss.pdf.pdfbox.visible.ImageRotationUtils;
+import eu.europa.esig.dss.pdf.pdfbox.visible.defaultdrawer.DefaultPdfBoxVisibleSignatureDrawer;
 import eu.europa.esig.dss.pdf.visible.CommonDrawerUtils;
 import eu.europa.esig.dss.pdf.visible.FontUtils;
 import eu.europa.esig.dss.utils.Utils;
@@ -78,7 +79,8 @@ public class NativePdfBoxVisibleSignatureDrawer extends AbstractPdfBoxSignatureD
 		ByteArrayInputStream bais = null;
 		try (PDDocument doc = new PDDocument())
         {
-			PDPage originalPage = document.getPage(parameters.getPage() - 1);
+		    int pageIdx = DefaultPdfBoxVisibleSignatureDrawer.getPage(parameters.getPage(), document.getNumberOfPages());
+			PDPage originalPage = document.getPage(pageIdx);
 			SignatureFieldDimensionAndPositionBuilder dimensionAndPositionBuilder = new SignatureFieldDimensionAndPositionBuilder(parameters, originalPage);
 			SignatureFieldDimensionAndPosition dimensionAndPosition = dimensionAndPositionBuilder.build();
 			// create a new page

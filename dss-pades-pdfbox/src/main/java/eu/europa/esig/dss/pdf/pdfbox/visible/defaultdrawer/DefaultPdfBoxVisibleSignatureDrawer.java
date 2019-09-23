@@ -82,7 +82,7 @@ public class DefaultPdfBoxVisibleSignatureDrawer extends AbstractPdfBoxSignature
 		signatureProperties.buildSignature();
 		
 		signatureOptions.setVisualSignature(signatureProperties);
-		signatureOptions.setPage(parameters.getPage() - 1); // DSS-1138
+		signatureOptions.setPage(page); // DSS-1138
 	}
 
 	@Override
