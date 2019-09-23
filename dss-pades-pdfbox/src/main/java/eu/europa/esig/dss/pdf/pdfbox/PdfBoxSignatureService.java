@@ -22,7 +22,6 @@ package eu.europa.esig.dss.pdf.pdfbox;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -114,8 +113,6 @@ import eu.europa.esig.dss.utils.Utils;
 
 public class PdfBoxSignatureService extends AbstractPDFSignatureService {
 
-    private File pdfSignatureImageDir; 
-    
 	private static final Logger LOG = LoggerFactory.getLogger(PdfBoxSignatureService.class);
 
 	/**
@@ -928,9 +925,5 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
         public byte[] getFullOutput() {
             return ((ByteArrayOutputStream) getOutput()).toByteArray();
         }
-    }
-
-    public void setPdfSignatureImageDir(File dir) {
-        pdfSignatureImageDir = dir;
     }
 }
