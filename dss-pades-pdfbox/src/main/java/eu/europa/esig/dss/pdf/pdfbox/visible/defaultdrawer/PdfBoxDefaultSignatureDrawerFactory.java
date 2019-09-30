@@ -20,7 +20,7 @@
  */
 package eu.europa.esig.dss.pdf.pdfbox.visible.defaultdrawer;
 
-import eu.europa.esig.dss.pades.SignatureImageParameters;
+import eu.europa.esig.dss.model.pades.SignatureImageParameters;
 import eu.europa.esig.dss.pdf.pdfbox.visible.PdfBoxSignatureDrawer;
 import eu.europa.esig.dss.pdf.pdfbox.visible.PdfBoxSignatureDrawerFactory;
 

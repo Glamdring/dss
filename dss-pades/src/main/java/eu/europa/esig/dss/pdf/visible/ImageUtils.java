@@ -47,9 +47,10 @@ import org.w3c.dom.NodeList;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.model.MimeType;
-import eu.europa.esig.dss.pades.DSSFont;
-import eu.europa.esig.dss.pades.SignatureImageParameters;
-import eu.europa.esig.dss.pades.SignatureImageTextParameters;
+import eu.europa.esig.dss.model.pades.DSSFont;
+import eu.europa.esig.dss.model.pades.SignatureImageParameters;
+import eu.europa.esig.dss.model.pades.SignatureImageTextParameters;
+import eu.europa.esig.dss.pades.DSSFileFont;
 import eu.europa.esig.dss.utils.Utils;
 
 /**
@@ -108,7 +109,7 @@ public class ImageUtils {
 
 		}
 
-		float ration = CommonDrawerUtils.getRation(imageParameters.getDpi());
+		float ration = CommonDrawerUtils.getRation(CommonDrawerUtils.getDpi(imageParameters.getDpi()));
 		return new Dimension(Math.round((int)width / ration), Math.round((int)height / ration));
 	}
 	
@@ -127,7 +128,8 @@ public class ImageUtils {
 			imageAndResolution = ImageUtils.readDisplayMetadata(imageParameters.getImage());
 		} catch (Exception e) {
 			LOG.warn("Cannot access the image metadata : {}. Returns default info.", e.getMessage());
-			imageAndResolution = new ImageAndResolution(imageParameters.getImage(), imageParameters.getDpi(), imageParameters.getDpi());
+			imageAndResolution = new ImageAndResolution(imageParameters.getImage(), 
+					CommonDrawerUtils.getDpi(imageParameters.getDpi()), CommonDrawerUtils.getDpi(imageParameters.getDpi()));
 		}
 		return imageAndResolution;
 	}
@@ -328,7 +330,11 @@ public class ImageUtils {
 	private static Dimension getTextDimension(SignatureImageParameters imageParameters) {
 		SignatureImageTextParameters textParameters = imageParameters.getTextParameters();
 		DSSFont dssFont = textParameters.getFont();
-		Font properFont = FontUtils.computeProperFont(dssFont.getJavaFont(), dssFont.getSize(), imageParameters.getDpi());
+		if (dssFont == null) {
+		    textParameters.setFont(DSSFileFont.initializeDefault());
+		    dssFont = textParameters.getFont();
+		}
+		Font properFont = FontUtils.computeProperFont(dssFont.getJavaFont(), dssFont.getSize(), CommonDrawerUtils.getDpi(imageParameters.getDpi()));
 		return FontUtils.computeSize(properFont, textParameters.getText(), textParameters.getPadding());
 	}
 

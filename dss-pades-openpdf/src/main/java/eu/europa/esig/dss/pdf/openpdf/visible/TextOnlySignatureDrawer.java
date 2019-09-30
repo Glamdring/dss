@@ -31,9 +31,10 @@ import com.lowagie.text.pdf.DefaultFontMapper;
 import com.lowagie.text.pdf.PdfSignatureAppearance;
 
 import eu.europa.esig.dss.model.DSSException;
-import eu.europa.esig.dss.pades.DSSFont;
-import eu.europa.esig.dss.pades.SignatureImageParameters;
-import eu.europa.esig.dss.pades.SignatureImageTextParameters;
+import eu.europa.esig.dss.model.pades.DSSFont;
+import eu.europa.esig.dss.model.pades.SignatureImageParameters;
+import eu.europa.esig.dss.model.pades.SignatureImageTextParameters;
+import eu.europa.esig.dss.pades.DSSFileFont;
 import eu.europa.esig.dss.pdf.visible.FontUtils;
 import eu.europa.esig.dss.spi.DSSUtils;
 import eu.europa.esig.dss.utils.Utils;
@@ -63,7 +64,12 @@ public class TextOnlySignatureDrawer extends AbstractITextSignatureDrawer {
 			int height = parameters.getHeight();
 			if (width == 0 || height == 0) {
 				SignatureImageTextParameters textParameters = parameters.getTextParameters();
-				Dimension dimension = FontUtils.computeSize(textParameters.getFont(), text, textParameters.getPadding());
+				DSSFont dssFont = textParameters.getFont();
+				if (dssFont == null) {
+	                textParameters.setFont(DSSFileFont.initializeDefault());
+	                dssFont = textParameters.getFont();
+	            }
+				Dimension dimension = FontUtils.computeSize(dssFont, text, textParameters.getPadding());
 				width = dimension.width;
 				height = dimension.height;
 			}
@@ -84,6 +90,10 @@ public class TextOnlySignatureDrawer extends AbstractITextSignatureDrawer {
 	private Font initFont() throws IOException {
 		SignatureImageTextParameters textParameters = parameters.getTextParameters();
 		DSSFont dssFont = textParameters.getFont();
+		if (dssFont == null) {
+            textParameters.setFont(DSSFileFont.initializeDefault());
+            dssFont = textParameters.getFont();
+        }
 		BaseFont baseFont;
 		if (dssFont.isLogicalFont()) {
 			DefaultFontMapper fontMapper = new DefaultFontMapper();

@@ -9,11 +9,12 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.europa.esig.dss.pades.DSSFont;
-import eu.europa.esig.dss.pades.SignatureImageParameters;
-import eu.europa.esig.dss.pades.SignatureImageParameters.VisualSignatureAlignmentHorizontal;
-import eu.europa.esig.dss.pades.SignatureImageParameters.VisualSignatureAlignmentVertical;
-import eu.europa.esig.dss.pades.SignatureImageTextParameters;
+import eu.europa.esig.dss.model.pades.DSSFont;
+import eu.europa.esig.dss.model.pades.SignatureImageParameters;
+import eu.europa.esig.dss.model.pades.SignatureImageTextParameters;
+import eu.europa.esig.dss.model.pades.SignatureImageParameters.VisualSignatureAlignmentHorizontal;
+import eu.europa.esig.dss.model.pades.SignatureImageParameters.VisualSignatureAlignmentVertical;
+import eu.europa.esig.dss.pades.DSSFileFont;
 import eu.europa.esig.dss.pdf.pdfbox.visible.ImageRotationUtils;
 import eu.europa.esig.dss.pdf.visible.CommonDrawerUtils;
 import eu.europa.esig.dss.pdf.visible.FontUtils;
@@ -55,7 +56,8 @@ public class SignatureFieldDimensionAndPositionBuilder {
 				imageAndResolution = ImageUtils.readDisplayMetadata(imageParameters.getImage());
 			} catch (Exception e) {
 				LOG.warn("Cannot access the image metadata : {}. Returns default info.", e.getMessage());
-				imageAndResolution = new ImageAndResolution(imageParameters.getImage(), imageParameters.getDpi(), imageParameters.getDpi());
+				imageAndResolution = new ImageAndResolution(imageParameters.getImage(), 
+				        CommonDrawerUtils.getDpi(imageParameters.getDpi()), CommonDrawerUtils.getDpi(imageParameters.getDpi()));
 			}
 			dimensionAndPosition.setImageAndResolution(imageAndResolution);
 		}
@@ -86,11 +88,15 @@ public class SignatureFieldDimensionAndPositionBuilder {
 			height = imageHeight;
 			
 			DSSFont dssFont = textParameters.getFont();
+			if (dssFont == null) {
+			    textParameters.setFont(DSSFileFont.initializeDefault());
+			    dssFont = textParameters.getFont();
+			}
 			// native implementation uses dpi-independent font
-			Font properFont = FontUtils.computeProperFont(dssFont.getJavaFont(), dssFont.getSize(), imageParameters.getDpi());
+			Font properFont = FontUtils.computeProperFont(dssFont.getJavaFont(), dssFont.getSize(), CommonDrawerUtils.getDpi(imageParameters.getDpi()));
 			Dimension textBox = FontUtils.computeSize(properFont, textParameters.getText(), textParameters.getPadding());
-			float textWidth = (float) textBox.getWidth() * CommonDrawerUtils.getTextScaleFactor(imageParameters.getDpi());
-			float textHeight = (float) textBox.getHeight() * CommonDrawerUtils.getTextScaleFactor(imageParameters.getDpi());
+			float textWidth = (float) textBox.getWidth() * CommonDrawerUtils.getTextScaleFactor(CommonDrawerUtils.getDpi(imageParameters.getDpi()));
+			float textHeight = (float) textBox.getHeight() * CommonDrawerUtils.getTextScaleFactor(CommonDrawerUtils.getDpi(imageParameters.getDpi()));
 			if (imageParameters.getImage() != null) {
 				textWidth /= CommonDrawerUtils.getTextScaleFactor(dimensionAndPosition.getxDpi());
 				textHeight /= CommonDrawerUtils.getTextScaleFactor(dimensionAndPosition.getyDpi());

@@ -20,7 +20,7 @@
  */
 package eu.europa.esig.dss.pdf.visible;
 
-import eu.europa.esig.dss.pades.SignatureImageParameters;
+import eu.europa.esig.dss.model.pades.SignatureImageParameters;
 
 /**
  * Factory of {@code SignatureDrawer}

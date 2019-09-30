@@ -21,6 +21,22 @@
 package eu.europa.esig.dss.ws.signature.common;
 
 import java.util.List;
+import java.util.Map;
+
+import javax.naming.InvalidNameException;
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.logsentinel.ApiCallbackAdapter;
+import com.logsentinel.ApiException;
+import com.logsentinel.LogSentinelClient;
+import com.logsentinel.client.model.ActionData;
+import com.logsentinel.client.model.ActorData;
+import com.logsentinel.client.model.AuditLogEntryType;
+import com.logsentinel.client.model.LogResponse;
 
 import eu.europa.esig.dss.AbstractSignatureParameters;
 import eu.europa.esig.dss.asic.cades.ASiCWithCAdESSignatureParameters;
@@ -29,6 +45,7 @@ import eu.europa.esig.dss.cades.CAdESSignatureParameters;
 import eu.europa.esig.dss.enumerations.ASiCContainerType;
 import eu.europa.esig.dss.enumerations.SignatureForm;
 import eu.europa.esig.dss.model.BLevelParameters;
+import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.model.Policy;
 import eu.europa.esig.dss.model.SignatureValue;
@@ -36,6 +53,7 @@ import eu.europa.esig.dss.model.SignerLocation;
 import eu.europa.esig.dss.model.TimestampParameters;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
+import eu.europa.esig.dss.spi.DSSUtils;
 import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.ws.converter.RemoteCertificateConverter;
 import eu.europa.esig.dss.ws.converter.RemoteDocumentConverter;
@@ -48,6 +66,11 @@ import eu.europa.esig.dss.xades.XAdESSignatureParameters;
 
 public abstract class AbstractRemoteSignatureServiceImpl {
 
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractRemoteSignatureServiceImpl.class);
+    
+    private LogSentinelClient logSentinelClient;
+    private boolean logsentinelIncludeNames;
+    
 	protected AbstractSignatureParameters getASiCSignatureParameters(ASiCContainerType asicContainerType,
 			SignatureForm signatureForm) {
 		switch (signatureForm) {
@@ -117,6 +140,11 @@ public abstract class AbstractRemoteSignatureServiceImpl {
 		if (Utils.isCollectionNotEmpty(remoteCertificateChain)) {
 			parameters.setCertificateChain(RemoteCertificateConverter.toCertificateTokens(remoteCertificateChain));
 		}
+		
+		if (parameters instanceof PAdESSignatureParameters) {
+		    ((PAdESSignatureParameters) parameters).setSignatureImageParameters(remoteParameters.getSignatureImageParameters());
+		    ((PAdESSignatureParameters) parameters).setStampImageParameters(remoteParameters.getStampImageParameters());
+		}
 	}
 	
 	private BLevelParameters toBLevelParameters(RemoteBLevelParameters remoteBLevelParameters) {
@@ -158,4 +186,62 @@ public abstract class AbstractRemoteSignatureServiceImpl {
 		return new SignatureValue(signatureValueDTO.getAlgorithm(), signatureValueDTO.getValue());
 	}
 
+    public void setLogSentinelClient(LogSentinelClient logSentinelClient) {
+        this.logSentinelClient = logSentinelClient;
+    }
+
+    public void setLogsentinelIncludeNames(boolean logsentinelIncludeNames) {
+        this.logsentinelIncludeNames = logsentinelIncludeNames;
+    }
+
+    /**
+     * Send audit trail information to the LogSentinel audit trail service for
+     * secure storing
+     * 
+     * @param document
+     * @param params
+     */
+    protected void logSigningRequest(DSSDocument document, RemoteSignatureParameters params) {
+        if (logSentinelClient == null) {
+            return;
+        }
+
+        CertificateToken loadCertificate = DSSUtils
+                .loadCertificate(params.getSigningCertificate().getEncodedCertificate());
+
+        String principal = loadCertificate.getSubjectX500Principal().getName().replace("+", ",");
+        LdapName ldapName;
+        try {
+            ldapName = new LdapName(principal);
+        } catch (InvalidNameException ex) {
+            throw new DSSException(ex);
+        }
+
+        ActorData actor = new ActorData(loadCertificate.getCertificate().getSerialNumber().toString());
+
+        if (logsentinelIncludeNames) {
+            String signerNames = ldapName.getRdns().stream().filter(rdn -> rdn.getType().equals("CN"))
+                    .map(Rdn::getValue).map(String.class::cast).findFirst().orElse("");
+            actor.setActorDisplayName(signerNames);
+        }
+
+        ActionData<String> action = new ActionData<>(document.getDigest(params.getDigestAlgorithm()));
+        action.setAction("SIGN");
+        action.setEntityType("DOCUMENT");
+        if (document.getName() != null) {
+            action.setEntityId(document.getName().replaceAll(".pdf", ""));
+        }
+        action.setEntryType(AuditLogEntryType.BUSINESS_LOGIC_ENTRY);
+
+        try {
+            logSentinelClient.getAuditLogActions().logAsync(actor, action, new ApiCallbackAdapter<LogResponse>() {
+                @Override
+                public void onFailure(ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
+                    LOG.error("Failed to log request", e);
+                }
+            });
+        } catch (ApiException e) {
+            LOG.error("Failed to log request", e);
+        }
+    }
 }

@@ -38,10 +38,10 @@ import org.w3c.dom.Element;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.model.InMemoryDocument;
+import eu.europa.esig.dss.model.pades.SignatureImageParameters;
+import eu.europa.esig.dss.model.pades.SignatureImageTextParameters;
+import eu.europa.esig.dss.model.pades.SignatureImageTextParameters.SignerTextPosition;
 import eu.europa.esig.dss.model.x509.CertificateToken;
-import eu.europa.esig.dss.pades.SignatureImageParameters;
-import eu.europa.esig.dss.pades.SignatureImageTextParameters;
-import eu.europa.esig.dss.pades.SignatureImageTextParameters.SignerTextPosition;
 import eu.europa.esig.dss.pdf.visible.CommonDrawerUtils;
 import eu.europa.esig.dss.pdf.visible.ImageAndResolution;
 import eu.europa.esig.dss.pdf.visible.ImageUtils;
@@ -179,8 +179,8 @@ public class DefaultDrawerImageUtils {
 	private static BufferedImage createEmptyImage(final SignatureImageParameters imageParameters, final int textWidth, final int textHeight) {
 		int width = 0;
 		int height = 0;
-		int fieldWidth = (int)CommonDrawerUtils.computeProperSize(imageParameters.getWidth(), imageParameters.getDpi());
-		int fieldHeight = (int)CommonDrawerUtils.computeProperSize(imageParameters.getHeight(), imageParameters.getDpi());
+		int fieldWidth = (int)CommonDrawerUtils.computeProperSize(imageParameters.getWidth(), CommonDrawerUtils.getDpi(imageParameters.getDpi()));
+		int fieldHeight = (int)CommonDrawerUtils.computeProperSize(imageParameters.getHeight(), CommonDrawerUtils.getDpi(imageParameters.getDpi()));
 		SignerTextPosition signerNamePosition = imageParameters.getTextParameters().getSignerTextPosition();
 		switch (signerNamePosition) {
 			case LEFT:

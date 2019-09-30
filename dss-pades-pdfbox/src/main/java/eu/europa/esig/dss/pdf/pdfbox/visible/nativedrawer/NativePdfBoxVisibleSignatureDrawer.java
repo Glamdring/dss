@@ -34,9 +34,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.europa.esig.dss.model.DSSDocument;
-import eu.europa.esig.dss.pades.DSSFont;
-import eu.europa.esig.dss.pades.SignatureImageParameters;
-import eu.europa.esig.dss.pades.SignatureImageTextParameters;
+import eu.europa.esig.dss.model.pades.DSSFont;
+import eu.europa.esig.dss.model.pades.SignatureImageParameters;
+import eu.europa.esig.dss.model.pades.SignatureImageTextParameters;
+import eu.europa.esig.dss.pades.DSSFileFont;
 import eu.europa.esig.dss.pdf.pdfbox.visible.AbstractPdfBoxSignatureDrawer;
 import eu.europa.esig.dss.pdf.pdfbox.visible.ImageRotationUtils;
 import eu.europa.esig.dss.pdf.pdfbox.visible.defaultdrawer.DefaultPdfBoxVisibleSignatureDrawer;
@@ -65,6 +66,10 @@ public class NativePdfBoxVisibleSignatureDrawer extends AbstractPdfBoxSignatureD
 	 */
 	private PDFont initFont() throws IOException {
 		DSSFont dssFont = parameters.getTextParameters().getFont();
+		if (dssFont == null) {
+            parameters.getTextParameters().setFont(DSSFileFont.initializeDefault());
+            dssFont = parameters.getTextParameters().getFont();
+        }
 		if (dssFont.isLogicalFont()) {
 			return PdfBoxFontMapper.getPDFont(dssFont.getJavaFont());
 		} else {
@@ -255,6 +260,10 @@ public class NativePdfBoxVisibleSignatureDrawer extends AbstractPdfBoxSignatureD
     	if (textParameters != null && Utils.isStringNotEmpty(textParameters.getText())) {
     		setTextBackground(cs, textParameters, dimensionAndPosition);
     		DSSFont dssFont = textParameters.getFont();
+    		if (dssFont == null) {
+                textParameters.setFont(DSSFileFont.initializeDefault());
+                dssFont = textParameters.getFont();
+            }
             float fontSize = dssFont.getSize();
             cs.beginText();
             cs.setFont(pdFont, fontSize);
@@ -263,7 +272,7 @@ public class NativePdfBoxVisibleSignatureDrawer extends AbstractPdfBoxSignatureD
             
             String[] strings = textParameters.getText().split("\\r?\\n");
             
-			Font properFont = FontUtils.computeProperFont(dssFont.getJavaFont(), dssFont.getSize(), parameters.getDpi());
+			Font properFont = FontUtils.computeProperFont(dssFont.getJavaFont(), dssFont.getSize(), CommonDrawerUtils.getDpi(parameters.getDpi()));
             FontMetrics fontMetrics = FontUtils.getFontMetrics(properFont);
             cs.setLeading(textSizeWithDpi(fontMetrics.getHeight(), dimensionAndPosition.getyDpi()));
             

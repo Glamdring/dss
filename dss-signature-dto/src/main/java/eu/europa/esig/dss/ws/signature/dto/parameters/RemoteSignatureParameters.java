@@ -31,6 +31,7 @@ import eu.europa.esig.dss.enumerations.MaskGenerationFunction;
 import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.enumerations.SignaturePackaging;
+import eu.europa.esig.dss.model.pades.SignatureImageParameters;
 import eu.europa.esig.dss.ws.dto.RemoteCertificate;
 import eu.europa.esig.dss.ws.dto.RemoteDocument;
 
@@ -116,6 +117,16 @@ public class RemoteSignatureParameters implements Serializable {
 	 */
 	private boolean generateTBSWithoutCertificate = false;
 
+	/**
+     * This attribute is used to create visible signature in PAdES form
+     */
+    private SignatureImageParameters signatureImageParameters;
+
+    /**
+     * This attribute is used to create visible stamps in PAdES form
+     */
+    private List<SignatureImageParameters> stampImageParameters;
+    
 	public RemoteSignatureParameters() {
 	}
 
@@ -489,5 +500,22 @@ public class RemoteSignatureParameters implements Serializable {
 		}
 		return true;
 	}
+
+    public SignatureImageParameters getSignatureImageParameters() {
+        return signatureImageParameters;
+    }
+
+    public void setSignatureImageParameters(SignatureImageParameters signatureImageParameters) {
+        this.signatureImageParameters = signatureImageParameters;
+    }
+
+    public List<SignatureImageParameters> getStampImageParameters() {
+        return stampImageParameters;
+    }
+
+    public void setStampImageParameters(List<SignatureImageParameters> stampImageParameters) {
+        this.stampImageParameters = stampImageParameters;
+    }
+	
 
 }

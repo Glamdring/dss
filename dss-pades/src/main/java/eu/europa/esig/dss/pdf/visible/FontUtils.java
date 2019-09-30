@@ -6,7 +6,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
-import eu.europa.esig.dss.pades.DSSFont;
+import eu.europa.esig.dss.model.pades.DSSFont;
 
 public class FontUtils {
 	

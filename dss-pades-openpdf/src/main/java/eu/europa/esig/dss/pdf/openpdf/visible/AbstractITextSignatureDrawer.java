@@ -24,7 +24,7 @@ import java.io.IOException;
 
 import com.lowagie.text.pdf.PdfSignatureAppearance;
 
-import eu.europa.esig.dss.pades.SignatureImageParameters;
+import eu.europa.esig.dss.model.pades.SignatureImageParameters;
 
 public abstract class AbstractITextSignatureDrawer implements ITextSignatureDrawer {
 

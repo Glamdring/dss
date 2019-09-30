@@ -2,8 +2,8 @@ package eu.europa.esig.dss.pdf.pdfbox.visible;
 
 import org.apache.pdfbox.pdmodel.PDPage;
 
-import eu.europa.esig.dss.pades.SignatureImageParameters;
-import eu.europa.esig.dss.pades.SignatureImageParameters.VisualSignatureRotation;
+import eu.europa.esig.dss.model.pades.SignatureImageParameters;
+import eu.europa.esig.dss.model.pades.SignatureImageParameters.VisualSignatureRotation;
 
 public class ImageRotationUtils {
 	

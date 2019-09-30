@@ -25,7 +25,7 @@ import java.io.IOException;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.SignatureOptions;
 
-import eu.europa.esig.dss.pades.SignatureImageParameters;
+import eu.europa.esig.dss.model.pades.SignatureImageParameters;
 import eu.europa.esig.dss.pdf.visible.SignatureDrawer;
 
 public interface PdfBoxSignatureDrawer extends SignatureDrawer {

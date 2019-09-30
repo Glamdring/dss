@@ -128,6 +128,8 @@ public class RemoteDocumentSignatureServiceImpl extends AbstractRemoteSignatureS
 		DSSDocument dssDocument = RemoteDocumentConverter.toDSSDocument(remoteDocument);
 		DSSDocument signDocument = (DSSDocument) service.signDocument(dssDocument, parameters, toSignatureValue(signatureValueDTO));
 		LOG.info("SignDocument is finished");
+		logSigningRequest(signDocument, remoteParameters);
+		
 		return RemoteDocumentConverter.toRemoteDocument(signDocument);
 	}
 

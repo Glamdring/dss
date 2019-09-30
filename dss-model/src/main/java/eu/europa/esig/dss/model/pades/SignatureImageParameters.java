@@ -18,18 +18,24 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
-package eu.europa.esig.dss.pades;
+package eu.europa.esig.dss.model.pades;
 
 import java.awt.Color;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.SignatureImagePageRange;
-import eu.europa.esig.dss.pdf.visible.CommonDrawerUtils;
 
 /**
  * Parameters for a visible signature creation
  *
  */
+@XmlAccessorType(XmlAccessType.FIELD)
+@XmlRootElement
 public class SignatureImageParameters {
 
 	public static final int DEFAULT_PAGE = 1;
@@ -114,6 +120,7 @@ public class SignatureImageParameters {
 	/**
 	 * This variable contains the image to use (company logo,...)
 	 */
+	@XmlJavaTypeAdapter(DSSDocumentAdapter.class)
 	private DSSDocument image;
 
 	/**
@@ -169,6 +176,7 @@ public class SignatureImageParameters {
 	/**
 	 * This variable defines the color of the image
 	 */
+	@XmlJavaTypeAdapter(ColorAdapter.class)
 	private Color backgroundColor;
 
 	/**
@@ -356,7 +364,7 @@ public class SignatureImageParameters {
 	 * @return {@link Integer} dpi value
 	 */
 	public Integer getDpi() {
-		return CommonDrawerUtils.getDpi(dpi);
+		return dpi;
 	}
 
 	/**

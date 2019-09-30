@@ -19,5 +19,9 @@
 			<groupId>eu.europa.ec.joinup.sd-dss</groupId>
 			<artifactId>dss-common-remote-dto</artifactId>
 		</dependency>
+		<dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-model</artifactId>
+        </dependency>
 	</dependencies>
 </project>

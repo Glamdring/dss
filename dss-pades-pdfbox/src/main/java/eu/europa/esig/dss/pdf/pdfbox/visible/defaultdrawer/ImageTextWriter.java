@@ -30,10 +30,11 @@ import java.awt.image.BufferedImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.europa.esig.dss.pades.DSSFont;
-import eu.europa.esig.dss.pades.SignatureImageParameters;
-import eu.europa.esig.dss.pades.SignatureImageTextParameters;
-import eu.europa.esig.dss.pades.SignatureImageTextParameters.SignerTextPosition;
+import eu.europa.esig.dss.model.pades.DSSFont;
+import eu.europa.esig.dss.model.pades.SignatureImageParameters;
+import eu.europa.esig.dss.model.pades.SignatureImageTextParameters;
+import eu.europa.esig.dss.model.pades.SignatureImageTextParameters.SignerTextPosition;
+import eu.europa.esig.dss.pades.DSSFileFont;
 import eu.europa.esig.dss.pdf.visible.CommonDrawerUtils;
 import eu.europa.esig.dss.pdf.visible.FontUtils;
 
@@ -56,7 +57,11 @@ public final class ImageTextWriter {
 	public static BufferedImage createTextImage(final SignatureImageParameters imageParameters, SignatureImageTextParameters textParameters, String text) {
 		// Computing image size depending on the font
 		DSSFont dssFont = textParameters.getFont();
-		Font properFont = FontUtils.computeProperFont(dssFont.getJavaFont(), dssFont.getSize(), imageParameters.getDpi());
+		if (dssFont == null) {
+            textParameters.setFont(DSSFileFont.initializeDefault());
+            dssFont = textParameters.getFont();
+        }
+		Font properFont = FontUtils.computeProperFont(dssFont.getJavaFont(), dssFont.getSize(), CommonDrawerUtils.getDpi(imageParameters.getDpi()));
 		Dimension dimension = FontUtils.computeSize(properFont, textParameters.getText(), textParameters.getPadding());
 		return createTextImage(text != null ? text : textParameters.getText(), textParameters, properFont, dimension, imageParameters);
 	}
@@ -68,6 +73,10 @@ public final class ImageTextWriter {
 	 */
 	public static Dimension getOriginalTextDimension(final SignatureImageTextParameters textParameters) {
 		DSSFont dssFont = textParameters.getFont();
+		if (dssFont == null) {
+            textParameters.setFont(DSSFileFont.initializeDefault());
+            dssFont = textParameters.getFont();
+        }
 		Font properFont = FontUtils.computeProperFont(dssFont.getJavaFont(), dssFont.getSize(), CommonDrawerUtils.getDpi(null));
 		return FontUtils.computeSize(properFont, textParameters.getText(), textParameters.getPadding());
 	}

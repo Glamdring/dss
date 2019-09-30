@@ -18,9 +18,13 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
-package eu.europa.esig.dss.pades;
+package eu.europa.esig.dss.model.pades;
 
 import java.awt.Color;
+
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+
+import eu.europa.esig.dss.model.ColorAdapter;
 
 /**
  * This class allows to custom text generation in the PAdES visible signature
@@ -81,7 +85,7 @@ public class SignatureImageTextParameters {
 	 * This variable defines the font to use
 	 * (default is PTSerifRegular)
 	 */
-	private DSSFont dssFont = DSSFileFont.initializeDefault();
+	private DSSFont dssFont;
 	
 	/**
 	 * This variable defines a padding in pixels to bound text around
@@ -93,12 +97,14 @@ public class SignatureImageTextParameters {
 	 * This variable defines the text color to use 
      * (default is BLACK)
 	 */
+	@XmlJavaTypeAdapter(ColorAdapter.class)
 	private Color textColor = DEFAULT_TEXT_COLOR;
 
 	/**
 	 * This variable defines the text color to use when the signerNamePosition
 	 * is not NONE (default is WHITE)
 	 */
+	@XmlJavaTypeAdapter(ColorAdapter.class)
 	private Color backgroundColor = DEFAULT_BACKGROUND_COLOR;
 
 	
