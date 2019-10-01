@@ -22,6 +22,9 @@ package eu.europa.esig.dss.model.pades;
 
 import java.awt.Color;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import eu.europa.esig.dss.model.ColorAdapter;
@@ -30,6 +33,7 @@ import eu.europa.esig.dss.model.ColorAdapter;
  * This class allows to custom text generation in the PAdES visible signature
  *
  */
+@XmlAccessorType(XmlAccessType.FIELD)
 public class SignatureImageTextParameters {
 
 	private static final Color DEFAULT_BACKGROUND_COLOR = Color.WHITE;
@@ -85,7 +89,7 @@ public class SignatureImageTextParameters {
 	 * This variable defines the font to use
 	 * (default is PTSerifRegular)
 	 */
-	private DSSFont dssFont;
+	private DSSJavaFont dssFont;
 	
 	/**
 	 * This variable defines a padding in pixels to bound text around
@@ -168,7 +172,7 @@ public class SignatureImageTextParameters {
 	 * Sets a text font
 	 * @param dssFont {@link DSSFont}
 	 */
-	public void setFont(DSSFont dssFont) {
+	public void setFont(DSSJavaFont dssFont) {
 		this.dssFont = dssFont;
 	}
 	
