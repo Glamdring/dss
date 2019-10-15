@@ -48,6 +48,7 @@ import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.model.MimeType;
 import eu.europa.esig.dss.model.pades.DSSFont;
+import eu.europa.esig.dss.model.pades.DSSJavaFont;
 import eu.europa.esig.dss.model.pades.SignatureImageParameters;
 import eu.europa.esig.dss.model.pades.SignatureImageTextParameters;
 import eu.europa.esig.dss.pades.DSSFileFont;
@@ -331,7 +332,7 @@ public class ImageUtils {
 		SignatureImageTextParameters textParameters = imageParameters.getTextParameters();
 		DSSFont dssFont = textParameters.getFont();
 		if (dssFont == null) {
-		    textParameters.setFont(DSSFileFont.initializeDefault());
+		    textParameters.setFont(new DSSJavaFont(DSSFileFont.initializeDefault().getJavaFont()));
 		    dssFont = textParameters.getFont();
 		}
 		Font properFont = FontUtils.computeProperFont(dssFont.getJavaFont(), dssFont.getSize(), CommonDrawerUtils.getDpi(imageParameters.getDpi()));

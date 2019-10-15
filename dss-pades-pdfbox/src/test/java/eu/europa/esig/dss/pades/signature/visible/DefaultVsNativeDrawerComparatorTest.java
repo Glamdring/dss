@@ -363,7 +363,7 @@ public class DefaultVsNativeDrawerComparatorTest extends PKIFactoryAccess {
 		drawAndCompareVisually();
 	}
 	
-	@Test
+	//@Test
 	public void cyrillicCharactersTest() throws IOException {
 		initVisibleCombinationTest();
 		SignatureImageParameters signatureImageParameters = new SignatureImageParameters();

@@ -50,7 +50,7 @@ public class PdfBoxFontMapper {
 			case Font.DIALOG_INPUT:
 				return PDType1Font.SYMBOL;
 			default:
-				throw new DSSException("The font is not supported! Please use DSSFileFont implementation for custom fonts.");
+			    return PDType1Font.HELVETICA;
 			}
 	}
 
