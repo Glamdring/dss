@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.europa.esig.dss.model.pades.DSSFont;
+import eu.europa.esig.dss.model.pades.DSSJavaFont;
 import eu.europa.esig.dss.model.pades.SignatureImageParameters;
 import eu.europa.esig.dss.model.pades.SignatureImageTextParameters;
 import eu.europa.esig.dss.model.pades.SignatureImageTextParameters.SignerTextPosition;
@@ -58,7 +59,7 @@ public final class ImageTextWriter {
 		// Computing image size depending on the font
 		DSSFont dssFont = textParameters.getFont();
 		if (dssFont == null) {
-            textParameters.setFont(DSSFileFont.initializeDefault());
+            textParameters.setFont(new DSSJavaFont(DSSFileFont.initializeDefault().getJavaFont()));
             dssFont = textParameters.getFont();
         }
 		Font properFont = FontUtils.computeProperFont(dssFont.getJavaFont(), dssFont.getSize(), CommonDrawerUtils.getDpi(imageParameters.getDpi()));
@@ -74,7 +75,7 @@ public final class ImageTextWriter {
 	public static Dimension getOriginalTextDimension(final SignatureImageTextParameters textParameters) {
 		DSSFont dssFont = textParameters.getFont();
 		if (dssFont == null) {
-            textParameters.setFont(DSSFileFont.initializeDefault());
+		    textParameters.setFont(new DSSJavaFont(DSSFileFont.initializeDefault().getJavaFont()));
             dssFont = textParameters.getFont();
         }
 		Font properFont = FontUtils.computeProperFont(dssFont.getJavaFont(), dssFont.getSize(), CommonDrawerUtils.getDpi(null));

@@ -275,7 +275,7 @@ public class DefaultVsNativeDrawerComparatorTest extends PKIFactoryAccess {
 		SignatureImageTextParameters textParameters = new SignatureImageTextParameters();
 		textParameters.setText("My signature");
 		textParameters.setTextColor(Color.BLUE);
-		textParameters.setFont(new DSSFileFont(getClass().getResourceAsStream("/fonts/OpenSansBold.ttf")));
+		textParameters.setFont(new DSSJavaFont(new DSSFileFont(getClass().getResourceAsStream("/fonts/OpenSansBold.ttf")).getJavaFont()));
 		textParameters.setSize(15);
 		textParameters.setSignerTextPosition(SignerTextPosition.BOTTOM);
 		imageParameters.setTextParameters(textParameters);
@@ -369,7 +369,7 @@ public class DefaultVsNativeDrawerComparatorTest extends PKIFactoryAccess {
 		SignatureImageParameters signatureImageParameters = new SignatureImageParameters();
 		SignatureImageTextParameters textParameters = new SignatureImageTextParameters();
 		textParameters.setText("Моя подпись 1");
-		textParameters.setFont(new DSSFileFont(getClass().getResourceAsStream("/fonts/OpenSansBold.ttf")));
+		textParameters.setFont(new DSSJavaFont(new DSSFileFont(getClass().getResourceAsStream("/fonts/OpenSansBold.ttf")).getJavaFont()));
 		signatureImageParameters.setTextParameters(textParameters);
 		signatureParameters.setSignatureImageParameters(signatureImageParameters);
 		drawAndCompareVisually();
@@ -386,7 +386,7 @@ public class DefaultVsNativeDrawerComparatorTest extends PKIFactoryAccess {
 		textParameters.setSignerTextHorizontalAlignment(SignerTextHorizontalAlignment.RIGHT);
 		textParameters.setBackgroundColor(new Color(1, 0, 0, 0.25f));
 		textParameters.setTextColor(Color.MAGENTA);
-		textParameters.setFont(new DSSFileFont(getClass().getResourceAsStream("/fonts/OpenSansExtraBold.ttf")));
+		textParameters.setFont(new DSSJavaFont(new DSSFileFont(getClass().getResourceAsStream("/fonts/OpenSansBold.ttf")).getJavaFont()));
 		textParameters.setSize(8);
 		imageParameters.setTextParameters(textParameters);
 		imageParameters.setBackgroundColor(new Color(0, 0, 1, 0.25f));

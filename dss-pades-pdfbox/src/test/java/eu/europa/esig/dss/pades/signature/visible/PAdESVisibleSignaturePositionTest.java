@@ -46,6 +46,7 @@ import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.model.ToBeSigned;
+import eu.europa.esig.dss.model.pades.DSSJavaFont;
 import eu.europa.esig.dss.model.pades.SignatureImageParameters;
 import eu.europa.esig.dss.model.pades.SignatureImageTextParameters;
 import eu.europa.esig.dss.pades.DSSFileFont;
@@ -317,7 +318,7 @@ public class PAdESVisibleSignaturePositionTest extends PKIFactoryAccess {
 		textParameters.setSignerTextPosition(SignatureImageTextParameters.SignerTextPosition.RIGHT);
 		textParameters.setBackgroundColor(TRANSPARENT);
 		textParameters.setTextColor(Color.MAGENTA);
-		textParameters.setFont(new DSSFileFont(getClass().getResourceAsStream("/fonts/OpenSansExtraBold.ttf")));
+		textParameters.setFont(new DSSJavaFont(new DSSFileFont(getClass().getResourceAsStream("/fonts/OpenSansBold.ttf")).getJavaFont()));
 		textParameters.setSize(8);
 		imageParameters.setTextParameters(textParameters);
 		imageParameters.setBackgroundColor(TRANSPARENT);

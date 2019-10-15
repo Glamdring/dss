@@ -62,9 +62,7 @@ public class DefaultDrawerImageUtils {
         DSSDocument image = imageParameters.getImage();
         
         if (image == null && imageParameters.getImageDocument() != null) {
-                image = new InMemoryDocument(imageParameters.getImageDocument(), 
-                        imageParameters.getImage().getName(), 
-                        imageParameters.getImage().getMimeType());
+                image = new InMemoryDocument(imageParameters.getImageDocument());
         }
 
         if (textLeftParameters != null && Utils.isStringNotEmpty(textLeftParameters.getText())) {

@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.pades.DSSFont;
+import eu.europa.esig.dss.model.pades.DSSJavaFont;
 import eu.europa.esig.dss.model.pades.SignatureImageParameters;
 import eu.europa.esig.dss.model.pades.SignatureImageTextParameters;
 import eu.europa.esig.dss.pades.DSSFileFont;
@@ -67,7 +68,7 @@ public class NativePdfBoxVisibleSignatureDrawer extends AbstractPdfBoxSignatureD
 	private PDFont initFont() throws IOException {
 		DSSFont dssFont = parameters.getTextParameters().getFont();
 		if (dssFont == null) {
-            parameters.getTextParameters().setFont(DSSFileFont.initializeDefault());
+            parameters.getTextParameters().setFont(new DSSJavaFont(DSSFileFont.initializeDefault().getJavaFont()));
             dssFont = parameters.getTextParameters().getFont();
         }
 		if (dssFont.isLogicalFont()) {
@@ -261,7 +262,7 @@ public class NativePdfBoxVisibleSignatureDrawer extends AbstractPdfBoxSignatureD
     		setTextBackground(cs, textParameters, dimensionAndPosition);
     		DSSFont dssFont = textParameters.getFont();
     		if (dssFont == null) {
-                textParameters.setFont(DSSFileFont.initializeDefault());
+    		    textParameters.setFont(new DSSJavaFont(DSSFileFont.initializeDefault().getJavaFont()));
                 dssFont = textParameters.getFont();
             }
             float fontSize = dssFont.getSize();
