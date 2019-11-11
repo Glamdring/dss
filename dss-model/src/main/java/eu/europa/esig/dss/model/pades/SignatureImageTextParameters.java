@@ -24,7 +24,6 @@ import java.awt.Color;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import eu.europa.esig.dss.model.ColorAdapter;
@@ -36,7 +35,7 @@ import eu.europa.esig.dss.model.ColorAdapter;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class SignatureImageTextParameters {
 
-	private static final Color DEFAULT_BACKGROUND_COLOR = Color.WHITE;
+	private static final Color DEFAULT_BACKGROUND_COLOR = new Color(255, 255, 255, 0);
 	private static final float DEFAULT_PADDING = 5f;
 	private static final Color DEFAULT_TEXT_COLOR = Color.BLACK;
 

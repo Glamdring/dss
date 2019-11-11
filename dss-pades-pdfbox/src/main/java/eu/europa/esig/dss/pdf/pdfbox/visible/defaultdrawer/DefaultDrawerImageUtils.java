@@ -191,6 +191,10 @@ public class DefaultDrawerImageUtils {
 				width = Math.max(fieldWidth, textWidth);
 				height = fieldHeight - textHeight;
 				break;
+			case FOREGROUND:
+			    width = fieldWidth;
+			    height = fieldHeight;
+			    break;
 			default:
 				throw new DSSException(String.format("The SignerNamePosition [%s] is not supported!", signerNamePosition.name()));
 		}

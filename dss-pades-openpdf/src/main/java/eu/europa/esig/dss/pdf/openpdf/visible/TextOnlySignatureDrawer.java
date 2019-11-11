@@ -32,10 +32,12 @@ import com.lowagie.text.pdf.PdfSignatureAppearance;
 
 import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.model.pades.DSSFont;
+import eu.europa.esig.dss.model.pades.DSSJavaFont;
 import eu.europa.esig.dss.model.pades.SignatureImageParameters;
 import eu.europa.esig.dss.model.pades.SignatureImageTextParameters;
 import eu.europa.esig.dss.pades.DSSFileFont;
 import eu.europa.esig.dss.pdf.visible.FontUtils;
+import eu.europa.esig.dss.pdf.visible.ImageUtils;
 import eu.europa.esig.dss.spi.DSSUtils;
 import eu.europa.esig.dss.utils.Utils;
 
@@ -66,7 +68,7 @@ public class TextOnlySignatureDrawer extends AbstractITextSignatureDrawer {
 				SignatureImageTextParameters textParameters = parameters.getTextParameters();
 				DSSFont dssFont = textParameters.getFont();
 				if (dssFont == null) {
-	                textParameters.setFont(DSSFileFont.initializeDefault());
+	                textParameters.setFont(new DSSJavaFont(DSSFileFont.initializeDefault().getJavaFont()));
 	                dssFont = textParameters.getFont();
 	            }
 				Dimension dimension = FontUtils.computeSize(dssFont, text, textParameters.getPadding());
@@ -74,7 +76,9 @@ public class TextOnlySignatureDrawer extends AbstractITextSignatureDrawer {
 				height = dimension.height;
 			}
 
-			Rectangle rect = new Rectangle(parameters.getxAxis(), originY - parameters.getyAxis() - height, parameters.getxAxis() + width,
+			Rectangle rect = new Rectangle(parameters.getxAxis(), 
+			        originY - ImageUtils.convertNegativeAxisValue(parameters.getyAxis(), height) - height, 
+			        ImageUtils.convertNegativeAxisValue(parameters.getxAxis(), width) + width,
 					originY - parameters.getyAxis());
 			rect.setBackgroundColor(parameters.getBackgroundColor());
 			appearance.setVisibleSignature(rect, parameters.getPage());
@@ -91,7 +95,7 @@ public class TextOnlySignatureDrawer extends AbstractITextSignatureDrawer {
 		SignatureImageTextParameters textParameters = parameters.getTextParameters();
 		DSSFont dssFont = textParameters.getFont();
 		if (dssFont == null) {
-            textParameters.setFont(DSSFileFont.initializeDefault());
+            textParameters.setFont(new DSSJavaFont(DSSFileFont.initializeDefault().getJavaFont()));
             dssFont = textParameters.getFont();
         }
 		BaseFont baseFont;

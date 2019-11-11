@@ -148,13 +148,14 @@ public final class SignatureImageAndPositionProcessor {
         switch (alignmentVertical) {
             case TOP:
             case NONE:
-                x = mediaBox.getWidth() - zoom(width, signatureImageParameters.getZoom()) - signatureImageParameters.getyAxis();
+                x = mediaBox.getWidth() - zoom(width, signatureImageParameters.getZoom()) - 
+                        ImageUtils.convertNegativeAxisValue(signatureImageParameters.getyAxis(), mediaBox.getHeight());
                 break;
             case MIDDLE:
                 x = (mediaBox.getWidth() - zoom(width, signatureImageParameters.getZoom())) / 2;
                 break;
             case BOTTOM:
-                x = signatureImageParameters.getyAxis();
+                x = ImageUtils.convertNegativeAxisValue(signatureImageParameters.getyAxis(), mediaBox.getHeight());
                 break;
             default:
                 throw new IllegalStateException(SUPPORTED_VERTICAL_ALIGNMENT_ERROR_MESSAGE + alignmentVertical.name());
@@ -194,7 +195,7 @@ public final class SignatureImageAndPositionProcessor {
         switch (alignmentVertical) {
             case TOP:
             case NONE:
-                x = signatureImageParameters.getyAxis();
+                x = ImageUtils.convertNegativeAxisValue(signatureImageParameters.getyAxis(), mediaBox.getHeight());
                 break;
             case MIDDLE:
                 x = (mediaBox.getWidth() - zoom(width, signatureImageParameters.getZoom())) / 2;
@@ -263,13 +264,14 @@ public final class SignatureImageAndPositionProcessor {
         switch (alignmentVertical) {
             case TOP:
             case NONE:
-                y = mediaBox.getHeight() - zoom(height, signatureImageParameters.getZoom()) - signatureImageParameters.getyAxis();
+                y = mediaBox.getHeight() - zoom(height, signatureImageParameters.getZoom()) - 
+                        ImageUtils.convertNegativeAxisValue(signatureImageParameters.getyAxis(), mediaBox.getHeight());
                 break;
             case MIDDLE:
                 y = (mediaBox.getHeight() - zoom(height, signatureImageParameters.getZoom())) / 2;
                 break;
             case BOTTOM:
-                y = signatureImageParameters.getyAxis();
+                y = ImageUtils.convertNegativeAxisValue(signatureImageParameters.getyAxis(), mediaBox.getHeight());
                 break;
             default:
                 throw new IllegalStateException(SUPPORTED_VERTICAL_ALIGNMENT_ERROR_MESSAGE + alignmentVertical.name());
@@ -309,7 +311,7 @@ public final class SignatureImageAndPositionProcessor {
         switch (alignmentVertical) {
             case TOP:
             case NONE:
-                y = signatureImageParameters.getyAxis();
+                y = ImageUtils.convertNegativeAxisValue(signatureImageParameters.getyAxis(), mediaBox.getHeight());
                 break;
             case MIDDLE:
                 y = (mediaBox.getHeight() - zoom(height, signatureImageParameters.getZoom())) / 2;

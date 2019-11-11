@@ -67,7 +67,9 @@ public class ImageOnlySignatureDrawer extends AbstractITextSignatureDrawer {
 			Rectangle pageSize = appearance.getStamper().getReader().getPageSize(parameters.getPage());
 			float originY = pageSize.getHeight();
 
-			Rectangle rect = new Rectangle(parameters.getxAxis(), originY - parameters.getyAxis() - height, parameters.getxAxis() + width,
+			Rectangle rect = new Rectangle(parameters.getxAxis(), 
+			        originY - ImageUtils.convertNegativeAxisValue(parameters.getyAxis(), height) - height, 
+			        ImageUtils.convertNegativeAxisValue(parameters.getxAxis(), width) + width,
 					originY - parameters.getyAxis());
 			rect.setBackgroundColor(parameters.getBackgroundColor());
 			appearance.setVisibleSignature(rect, parameters.getPage());

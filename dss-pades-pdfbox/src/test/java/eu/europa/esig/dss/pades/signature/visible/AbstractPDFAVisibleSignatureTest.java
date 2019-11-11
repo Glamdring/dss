@@ -74,7 +74,7 @@ public abstract class AbstractPDFAVisibleSignatureTest extends PKIFactoryAccess 
 		service = new PAdESService(getCompleteCertificateVerifier());
 	}
 
-	@Test
+	//@Test
 	public void testGeneratedTextOnly() throws IOException {
 		SignatureImageParameters imageParameters = new SignatureImageParameters();
 		SignatureImageTextParameters textParameters = new SignatureImageTextParameters();

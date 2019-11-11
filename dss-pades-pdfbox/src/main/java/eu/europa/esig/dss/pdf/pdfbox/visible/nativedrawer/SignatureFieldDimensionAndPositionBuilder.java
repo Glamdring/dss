@@ -216,7 +216,7 @@ public class SignatureFieldDimensionAndPositionBuilder {
 		switch (alignmentVertical) {
 		case TOP:
 		case NONE:
-			boxY = imageParameters.getyAxis();
+			boxY = ImageUtils.convertNegativeAxisValue(imageParameters.getyAxis(), dimensionAndPosition.getBoxHeight());
 			break;
 		case MIDDLE:
 			boxY = (pageMediaBox.getHeight() - dimensionAndPosition.getBoxHeight()) / 2;
