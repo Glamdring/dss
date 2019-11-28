@@ -380,6 +380,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator, Proc
 		executor.setDiagnosticData(diagnosticData);
 		executor.setEnableEtsiValidationReport(enableEtsiValidationReport);
 		final Reports reports = executor.execute();
+		reports.setValidationPolicy(validationPolicy);
 		return reports;
 	}
 

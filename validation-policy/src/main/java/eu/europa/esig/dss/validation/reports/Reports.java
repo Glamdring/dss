@@ -28,6 +28,7 @@ import org.xml.sax.SAXException;
 
 import eu.europa.esig.dss.detailedreport.jaxb.XmlDetailedReport;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlDiagnosticData;
+import eu.europa.esig.dss.policy.ValidationPolicy;
 import eu.europa.esig.dss.simplereport.SimpleReport;
 import eu.europa.esig.dss.simplereport.SimpleReportFacade;
 import eu.europa.esig.dss.simplereport.jaxb.XmlSimpleReport;
@@ -47,6 +48,8 @@ public class Reports extends AbstractReports {
 	private final ValidationReportType etsiValidationReport;
 	
 	private String xmlEtsiValidationReport;
+	
+	private ValidationPolicy validationPolicy;
 
 	/**
 	 * This is the default constructor to instantiate this container.
@@ -95,7 +98,15 @@ public class Reports extends AbstractReports {
 		return etsiValidationReport;
 	}
 	
-	/**
+	public ValidationPolicy getValidationPolicy() {
+        return validationPolicy;
+    }
+
+    public void setValidationPolicy(ValidationPolicy validationPolicy) {
+        this.validationPolicy = validationPolicy;
+    }
+
+    /**
 	 * This method returns the XML representation of the JAXB SimpleReport String
 	 * 
 	 * @return a String with the XML content of the JAXB {@code SimpleReport}

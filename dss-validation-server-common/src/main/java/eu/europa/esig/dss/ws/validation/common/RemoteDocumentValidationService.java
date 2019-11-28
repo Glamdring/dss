@@ -22,13 +22,29 @@ package eu.europa.esig.dss.ws.validation.common;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.security.cert.X509Certificate;
+import java.util.Date;
 import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
+import eu.europa.esig.dss.enumerations.SignatureLevel;
+import eu.europa.esig.dss.enumerations.SignaturePackaging;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DSSException;
+import eu.europa.esig.dss.model.InMemoryDocument;
+import eu.europa.esig.dss.model.SignatureValue;
+import eu.europa.esig.dss.model.ToBeSigned;
+import eu.europa.esig.dss.model.x509.CertificateToken;
+import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.validation.AdvancedSignature;
 import eu.europa.esig.dss.validation.CertificateVerifier;
@@ -45,8 +61,14 @@ public class RemoteDocumentValidationService {
 
 	private CertificateVerifier verifier;
 
+	private ReportSigner reportSigner;
+	
 	public void setVerifier(CertificateVerifier verifier) {
 		this.verifier = verifier;
+	}
+	
+	public void setReportSigner(ReportSigner reportSigner) {
+	    this.reportSigner = reportSigner;
 	}
 
 	public WSReportsDTO validateDocument(RemoteDocument signedFile, List<RemoteDocument> originalFiles, RemoteDocument policy) {
@@ -63,6 +85,7 @@ public class RemoteDocumentValidationService {
 				throw new DSSException(e);
 			}
 		}
+		
 
 		WSReportsDTO reportsDTO = new WSReportsDTO(reports.getDiagnosticDataJaxb(), reports.getSimpleReportJaxb(), 
 				reports.getDetailedReportJaxb(), reports.getEtsiValidationReportJaxb());
@@ -97,5 +120,5 @@ public class RemoteDocumentValidationService {
 		}
 		return signedDocValidator;
 	}
-
+	
 }
