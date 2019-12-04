@@ -1,7 +1,5 @@
-<ConstraintsParameters Name="QES AdESQC TL based" xmlns="http://dss.esig.europa.eu/validation/policy">
-	<Description>Validate electronic signatures and indicates whether they are Advanced electronic Signatures (AdES), AdES supported by a Qualified Certificate (AdES/QC) or a
-		Qualified electronic Signature (QES). All certificates and their related chains supporting the signatures are validated against the EU Member State Trusted Lists (this includes
-		signer's certificate and certificates used to validate certificate validity status services - CRLs, OCSP, and time-stamps).
+<ConstraintsParameters Name="Validation Policy : Evrotrust validation policy OID=1.3.6.1.4.1.47272.2.9" xmlns="http://dss.esig.europa.eu/validation/policy">
+	<Description>Electronically signed document is validated in accordance with the Evrotrust validation policy OID=1.3.6.1.4.1.47272.2.9. For further details please read Evrotrust qualified validation practice and policy.
 	</Description>
 	<ContainerConstraints>
 		<AcceptableContainerTypes Level="FAIL">
