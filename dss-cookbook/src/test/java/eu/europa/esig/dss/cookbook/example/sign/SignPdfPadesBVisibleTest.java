@@ -32,6 +32,7 @@ import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.model.ToBeSigned;
 import eu.europa.esig.dss.pades.DSSFileFont;
+import eu.europa.esig.dss.model.pades.DSSJavaFont;
 import eu.europa.esig.dss.model.pades.SignatureImageParameters;
 import eu.europa.esig.dss.model.pades.SignatureImageTextParameters;
 import eu.europa.esig.dss.model.pades.SignatureImageTextParameters.SignerTextHorizontalAlignment;
@@ -98,7 +99,7 @@ public class SignPdfPadesBVisibleTest extends CookbookTools {
 			DSSFileFont font = new DSSFileFont(getClass().getResourceAsStream("/fonts/OpenSansRegular.ttf"));
 			// tag::text[]
 			SignatureImageTextParameters textParameters = new SignatureImageTextParameters();
-			textParameters.setFont(font);
+			textParameters.setFont(new DSSJavaFont(font.getJavaFont()));
 			textParameters.setSize(14);
 			textParameters.setTextColor(Color.BLUE);
 			textParameters.setText("My visual signature \n #1");
