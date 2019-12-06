@@ -73,6 +73,11 @@ public class ReportSigner {
     
     private String signatureImageDir;
     
+    private int x;
+    private int y;
+    private int width;
+    private int height;
+    
     private ObjectMapper objectMapper = new ObjectMapper();
     
     public void init() throws IOException, CertificateException {
@@ -189,9 +194,10 @@ public class ReportSigner {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        imageParams.setxAxis(230);
-        imageParams.setyAxis(-65);
-        imageParams.setWidth(140);
+        imageParams.setxAxis(x);
+        imageParams.setyAxis(y);
+        imageParams.setWidth(width);
+        imageParams.setHeight(height);
         imageParams.setZoom(100);
         imageParams.setTextParameters(new SignatureImageTextParameters());
         imageParams.getTextParameters().setSignerTextPosition(SignerTextPosition.FOREGROUND);
@@ -251,5 +257,36 @@ public class ReportSigner {
     public void setSignatureImageDir(String signatureImageDir) {
         this.signatureImageDir = signatureImageDir;
     }
-    
+
+    public int getX() {
+        return x;
+    }
+
+    public void setX(int x) {
+        this.x = x;
+    }
+
+    public int getY() {
+        return y;
+    }
+
+    public void setY(int y) {
+        this.y = y;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public void setWidth(int width) {
+        this.width = width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
+    }
 }
