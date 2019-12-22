@@ -7,6 +7,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.pdfbox.io.IOUtils;
@@ -38,6 +39,7 @@ import eu.europa.esig.dss.model.pades.DSSFont;
 import eu.europa.esig.dss.model.pades.DSSJavaFont;
 import eu.europa.esig.dss.model.pades.SignatureImageParameters;
 import eu.europa.esig.dss.model.pades.SignatureImageTextParameters;
+import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.DSSFileFont;
 import eu.europa.esig.dss.pdf.pdfbox.visible.AbstractPdfBoxSignatureDrawer;
 import eu.europa.esig.dss.pdf.pdfbox.visible.ImageRotationUtils;
@@ -55,8 +57,8 @@ public class NativePdfBoxVisibleSignatureDrawer extends AbstractPdfBoxSignatureD
 	private static final float OPAQUE_VALUE = 0xff;
 	
 	@Override
-	public void init(SignatureImageParameters parameters, PDDocument document, SignatureOptions signatureOptions) throws IOException {
-		super.init(parameters, document, signatureOptions);
+	public void init(SignatureImageParameters parameters, PDDocument document, SignatureOptions signatureOptions, CertificateToken signingCertificate, Date signingDate) throws IOException {
+		super.init(parameters, document, signatureOptions, signingCertificate, signingDate);
 		if (parameters.getTextParameters() != null) {
 			this.pdFont = initFont();
 		}

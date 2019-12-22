@@ -115,7 +115,6 @@ public class DefaultDrawerImageUtils {
                     buffImg = ImageMerger.mergeOnTop(buffImg, scaledImage, imageParameters.getBackgroundColor());
                     break;
                 case FOREGROUND:
-                    scaledImage = writeImageToSignatureField(scaledImage, buffImg, imageParameters, true);
                     buffImg = ImageMerger.mergeOnBackground(buffImg, scaledImage);
                     break;
                 default:

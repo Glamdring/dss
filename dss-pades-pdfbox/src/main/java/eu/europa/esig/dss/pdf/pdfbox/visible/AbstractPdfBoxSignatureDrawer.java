@@ -21,6 +21,7 @@
 package eu.europa.esig.dss.pdf.pdfbox.visible;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.pdfbox.cos.COSName;
@@ -33,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.pades.SignatureImageParameters;
+import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.utils.Utils;
 
 public abstract class AbstractPdfBoxSignatureDrawer implements PdfBoxSignatureDrawer {
@@ -45,12 +47,16 @@ public abstract class AbstractPdfBoxSignatureDrawer implements PdfBoxSignatureDr
 	protected SignatureImageParameters parameters;
 	protected PDDocument document;
 	protected SignatureOptions signatureOptions;
-
+	protected CertificateToken signingCertificate;
+	protected Date signingDate;
+	
 	@Override
-	public void init(SignatureImageParameters parameters, PDDocument document, SignatureOptions signatureOptions) throws IOException {
+	public void init(SignatureImageParameters parameters, PDDocument document, SignatureOptions signatureOptions, CertificateToken signingCertificate, Date signingDate) throws IOException {
 		this.parameters = parameters;
 		this.document = document;
 		this.signatureOptions = signatureOptions;
+		this.signingCertificate = signingCertificate;
+		this.signingDate = signingDate;
 		checkColorSpace(document, parameters.getImage());
 	}
 	
