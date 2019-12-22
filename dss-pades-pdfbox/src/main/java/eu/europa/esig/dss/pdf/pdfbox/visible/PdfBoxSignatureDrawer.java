@@ -21,15 +21,18 @@
 package eu.europa.esig.dss.pdf.pdfbox.visible;
 
 import java.io.IOException;
+import java.util.Date;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.SignatureOptions;
 
 import eu.europa.esig.dss.model.pades.SignatureImageParameters;
+import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pdf.visible.SignatureDrawer;
 
 public interface PdfBoxSignatureDrawer extends SignatureDrawer {
 
-	void init(SignatureImageParameters parameters, PDDocument document, SignatureOptions signatureOptions) throws IOException;
+	void init(SignatureImageParameters parameters, PDDocument document, SignatureOptions signatureOptions, 
+	        CertificateToken signingCertificate, Date signingDate) throws IOException;
 
 }

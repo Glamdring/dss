@@ -38,7 +38,16 @@ public class DefaultPdfBoxVisibleSignatureDrawer extends AbstractPdfBoxSignature
 	@Override
 	public void draw() throws IOException {
 		// DSS-747. Using the DPI resolution to convert java size to dot
-		ImageAndResolution ires = DefaultDrawerImageUtils.create(parameters, null, null);
+		ImageAndResolution ires = DefaultDrawerImageUtils.create(parameters, signingCertificate, signingDate);
+
+        // calculate height based on width and ratio and vice versa
+        if (parameters.getWidth() != 0 && parameters.getHeight() == 0 && ires.getRatio() != 0) {
+            parameters.setHeight((int) (parameters.getWidth() / ires.getRatio()));
+        }
+
+        if (parameters.getWidth() == 0 && parameters.getHeight() != 0 && ires.getRatio() != 0) {
+            parameters.setWidth((int) (parameters.getHeight() * ires.getRatio()));
+        }
 
 		int page = getPage(parameters.getPage(), document.getNumberOfPages());
 		SignatureImageAndPosition signatureImageAndPosition = 
@@ -72,7 +81,7 @@ public class DefaultPdfBoxVisibleSignatureDrawer extends AbstractPdfBoxSignature
 		}
 
 		// zoom image only when it does not have text parameters, in other case does zoom inside DefaultDrawerImageUtils.create() method
-		if (parameters.getImage() == null || parameters.getTextParameters() == null) {
+		if ((parameters.getImage() == null && parameters.getImageDocument() != null) || parameters.getTextParameters() == null) {
 			visibleSig.zoom(((float) parameters.getZoom()) - 100); // pdfbox is 0 based
 		}
 		

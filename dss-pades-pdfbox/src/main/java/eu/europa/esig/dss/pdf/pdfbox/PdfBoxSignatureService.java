@@ -457,7 +457,8 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
 			SignatureImageParameters imageParameters = getImageParameters(parameters);
 			if (imageParameters != null && signatureDrawerFactory != null) {
 				PdfBoxSignatureDrawer signatureDrawer = (PdfBoxSignatureDrawer) signatureDrawerFactory.getSignatureDrawer(imageParameters);
-				signatureDrawer.init(imageParameters, pdDocument, options);
+				signatureDrawer.init(imageParameters, pdDocument, options, parameters.getSigningCertificate(), 
+				        parameters.bLevel().getSigningDate());
 				signatureDrawer.draw();
 			}
 
