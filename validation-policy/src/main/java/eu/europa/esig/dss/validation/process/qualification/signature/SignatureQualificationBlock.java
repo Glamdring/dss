@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import eu.europa.esig.dss.detailedreport.jaxb.XmlConclusion;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlConstraintsConclusionWithProofOfExistence;
@@ -36,14 +37,15 @@ import eu.europa.esig.dss.enumerations.CertificateQualification;
 import eu.europa.esig.dss.enumerations.Indication;
 import eu.europa.esig.dss.enumerations.SignatureQualification;
 import eu.europa.esig.dss.enumerations.ValidationTime;
+import eu.europa.esig.dss.i18n.I18nProvider;
+import eu.europa.esig.dss.i18n.MessageTag;
 import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.validation.process.Chain;
 import eu.europa.esig.dss.validation.process.ChainItem;
-import eu.europa.esig.dss.validation.process.ValidationProcessDefinition;
 import eu.europa.esig.dss.validation.process.qualification.certificate.CertQualificationAtTimeBlock;
 import eu.europa.esig.dss.validation.process.qualification.signature.checks.AcceptableTrustedListCheck;
 import eu.europa.esig.dss.validation.process.qualification.signature.checks.AdESAcceptableCheck;
-import eu.europa.esig.dss.validation.process.qualification.signature.checks.CertificatePathTrustedCheck;
+import eu.europa.esig.dss.validation.process.qualification.signature.checks.TrustedListReachedForCertificateChainCheck;
 import eu.europa.esig.dss.validation.process.qualification.signature.checks.ForeSignatureAtSigningTimeCheck;
 import eu.europa.esig.dss.validation.process.qualification.signature.checks.QSCDCertificateAtSigningTimeCheck;
 import eu.europa.esig.dss.validation.process.qualification.signature.checks.QualifiedCertificateAtCertificateIssuanceCheck;
@@ -57,22 +59,23 @@ public class SignatureQualificationBlock extends Chain<XmlValidationSignatureQua
 	private final Date bestSignatureTime;
 	private final CertificateWrapper signingCertificate;
 	private final List<XmlTLAnalysis> tlAnalysis;
-	private final String lotlCountryCode;
 
 	private CertificateQualification qualificationAtSigningTime;
 
-	public SignatureQualificationBlock(String signatureId, XmlConstraintsConclusionWithProofOfExistence etsi319102validation,
-			CertificateWrapper signingCertificate,
-			List<XmlTLAnalysis> tlAnalysis, String lotlCountryCode) {
-		super(new XmlValidationSignatureQualification());
-		result.setTitle(ValidationProcessDefinition.SIG_QUALIFICATION.getTitle());
+	public SignatureQualificationBlock(I18nProvider i18nProvider, String signatureId, XmlConstraintsConclusionWithProofOfExistence etsi319102validation,
+			CertificateWrapper signingCertificate, List<XmlTLAnalysis> tlAnalysis) {
+		super(i18nProvider, new XmlValidationSignatureQualification());
 		result.setId(signatureId);
 
 		this.etsi319102Conclusion = etsi319102validation.getConclusion();
 		this.bestSignatureTime = etsi319102validation.getProofOfExistence().getTime();
 		this.signingCertificate = signingCertificate;
 		this.tlAnalysis = tlAnalysis;
-		this.lotlCountryCode = lotlCountryCode;
+	}
+	
+	@Override
+	protected MessageTag getTitle() {
+		return MessageTag.SIG_QUALIFICATION;
 	}
 
 	@Override
@@ -80,45 +83,49 @@ public class SignatureQualificationBlock extends Chain<XmlValidationSignatureQua
 
 		ChainItem<XmlValidationSignatureQualification> item = firstItem = isAdES(etsi319102Conclusion);
 
-		item = item.setNextItem(certificatePathTrusted(signingCertificate));
+		item = item.setNextItem(isTrustedListReachedForCertificateChain(signingCertificate));
 
-		if (signingCertificate != null && signingCertificate.hasTrustedServices()) {
-
-			XmlTLAnalysis lotlAnalysis = getTlAnalysis(lotlCountryCode);
-			if (lotlAnalysis != null) {
-				item = item.setNextItem(isAcceptableTL(lotlAnalysis));
-			}
-
-			Set<String> acceptableCountries = new HashSet<String>();
+		if (signingCertificate != null && signingCertificate.isTrustedListReached()) {
 
 			List<TrustedServiceWrapper> originalTSPs = signingCertificate.getTrustedServices();
-			Set<String> countryCodes = getCountryCodes(originalTSPs);
-			for (String countryCode : countryCodes) {
-				XmlTLAnalysis currentTL = getTlAnalysis(countryCode);
+			Set<String> trustedListUrls = originalTSPs.stream().filter(t -> t.getTrustedList() != null)
+					.map(t -> t.getTrustedList().getUrl()).collect(Collectors.toSet());
+			Set<String> listOfTrustedListUrls = originalTSPs.stream().filter(t -> t.getListOfTrustedLists() != null)
+					.map(t -> t.getListOfTrustedLists().getUrl()).collect(Collectors.toSet());
+
+			for (String lotlURL : listOfTrustedListUrls) {
+				XmlTLAnalysis lotlAnalysis = getTlAnalysis(lotlURL);
+				if (lotlAnalysis != null) {
+					item = item.setNextItem(isAcceptableTL(lotlAnalysis));
+				}
+			}
+
+			Set<String> acceptableUrls = new HashSet<>();
+			for (String tlURL : trustedListUrls) {
+				XmlTLAnalysis currentTL = getTlAnalysis(tlURL);
 				if (currentTL != null) {
-					AcceptableTrustedListCheck<XmlValidationSignatureQualification> acceptableTL = isAcceptableTL(
-							currentTL);
+					AcceptableTrustedListCheck<XmlValidationSignatureQualification> acceptableTL = isAcceptableTL(currentTL);
 					item = item.setNextItem(acceptableTL);
 					if (acceptableTL.process()) {
-						acceptableCountries.add(countryCode);
+						acceptableUrls.add(tlURL);
 					}
 				}
 			}
 
 			// 1. filter by service for CAQC
-			TrustedServiceFilter filter = TrustedServicesFilterFactory.createFilterByCountries(acceptableCountries);
+			TrustedServiceFilter filter = TrustedServicesFilterFactory.createFilterByUrls(acceptableUrls);
 			List<TrustedServiceWrapper> acceptableServices = filter.filter(originalTSPs);
 
 			filter = TrustedServicesFilterFactory.createFilterByCaQc();
 			List<TrustedServiceWrapper> caqcServices = filter.filter(acceptableServices);
 
-			CertQualificationAtTimeBlock certQualAtIssuanceBlock = new CertQualificationAtTimeBlock(ValidationTime.CERTIFICATE_ISSUANCE_TIME,
+			CertQualificationAtTimeBlock certQualAtIssuanceBlock = new CertQualificationAtTimeBlock(i18nProvider, ValidationTime.CERTIFICATE_ISSUANCE_TIME,
 					signingCertificate, caqcServices);
 			XmlValidationCertificateQualification certQualAtIssuanceResult = certQualAtIssuanceBlock.execute();
 			result.getValidationCertificateQualification().add(certQualAtIssuanceResult);
 			CertificateQualification qualificationAtIssuance = certQualAtIssuanceResult.getCertificateQualification();
 
-			CertQualificationAtTimeBlock certQualAtSigningTimeBlock = new CertQualificationAtTimeBlock(ValidationTime.BEST_SIGNATURE_TIME, bestSignatureTime,
+			CertQualificationAtTimeBlock certQualAtSigningTimeBlock = new CertQualificationAtTimeBlock(i18nProvider, ValidationTime.BEST_SIGNATURE_TIME, bestSignatureTime,
 					signingCertificate, caqcServices);
 			XmlValidationCertificateQualification certQualAtSigningTimeResult = certQualAtSigningTimeBlock.execute();
 			result.getValidationCertificateQualification().add(certQualAtSigningTimeResult);
@@ -157,21 +164,13 @@ public class SignatureQualificationBlock extends Chain<XmlValidationSignatureQua
 		}
 	}
 
-	private XmlTLAnalysis getTlAnalysis(String countryCode) {
+	private XmlTLAnalysis getTlAnalysis(String url) {
 		for (XmlTLAnalysis xmlTLAnalysis : tlAnalysis) {
-			if (Utils.areStringsEqual(countryCode, xmlTLAnalysis.getCountryCode())) {
+			if (Utils.areStringsEqual(url, xmlTLAnalysis.getURL())) {
 				return xmlTLAnalysis;
 			}
 		}
 		return null;
-	}
-
-	private Set<String> getCountryCodes(List<TrustedServiceWrapper> trustServices) {
-		Set<String> countryCodes = new HashSet<String>();
-		for (TrustedServiceWrapper trustedServiceWrapper : trustServices) {
-			countryCodes.add(trustedServiceWrapper.getCountryCode());
-		}
-		return countryCodes;
 	}
 
 	@Override
@@ -205,33 +204,33 @@ public class SignatureQualificationBlock extends Chain<XmlValidationSignatureQua
 		}
 	}
 
-	private ChainItem<XmlValidationSignatureQualification> certificatePathTrusted(CertificateWrapper signingCertificate) {
-		return new CertificatePathTrustedCheck(result, signingCertificate, getFailLevelConstraint());
+	private ChainItem<XmlValidationSignatureQualification> isTrustedListReachedForCertificateChain(CertificateWrapper signingCertificate) {
+		return new TrustedListReachedForCertificateChainCheck<>(i18nProvider, result, signingCertificate, getFailLevelConstraint());
 	}
 
 	private AcceptableTrustedListCheck<XmlValidationSignatureQualification> isAcceptableTL(
 			XmlTLAnalysis xmlTLAnalysis) {
-		return new AcceptableTrustedListCheck<XmlValidationSignatureQualification>(result, xmlTLAnalysis, getFailLevelConstraint());
+		return new AcceptableTrustedListCheck<>(i18nProvider, result, xmlTLAnalysis, getFailLevelConstraint());
 	}
 
 	private ChainItem<XmlValidationSignatureQualification> isAdES(XmlConclusion etsi319102Conclusion) {
-		return new AdESAcceptableCheck(result, etsi319102Conclusion, getWarnLevelConstraint());
+		return new AdESAcceptableCheck(i18nProvider, result, etsi319102Conclusion, getWarnLevelConstraint());
 	}
 
 	private ChainItem<XmlValidationSignatureQualification> qualifiedCertificateAtSigningTime(CertificateQualification qualificationAtSigningTime) {
-		return new QualifiedCertificateAtSigningTimeCheck(result, qualificationAtSigningTime, getWarnLevelConstraint());
+		return new QualifiedCertificateAtSigningTimeCheck(i18nProvider, result, qualificationAtSigningTime, getWarnLevelConstraint());
 	}
 
 	private ChainItem<XmlValidationSignatureQualification> foreSignatureAtSigningTime(CertificateQualification qualificationAtSigningTime) {
-		return new ForeSignatureAtSigningTimeCheck(result, qualificationAtSigningTime, getWarnLevelConstraint());
+		return new ForeSignatureAtSigningTimeCheck(i18nProvider, result, qualificationAtSigningTime, getWarnLevelConstraint());
 	}
 
 	private ChainItem<XmlValidationSignatureQualification> qualifiedCertificateAtIssuance(CertificateQualification qualificationAtIssuance) {
-		return new QualifiedCertificateAtCertificateIssuanceCheck(result, qualificationAtIssuance, getWarnLevelConstraint());
+		return new QualifiedCertificateAtCertificateIssuanceCheck(i18nProvider, result, qualificationAtIssuance, getWarnLevelConstraint());
 	}
 
 	private ChainItem<XmlValidationSignatureQualification> qscdAtSigningTime(CertificateQualification qualificationAtSigningTime) {
-		return new QSCDCertificateAtSigningTimeCheck(result, qualificationAtSigningTime, getWarnLevelConstraint());
+		return new QSCDCertificateAtSigningTimeCheck(i18nProvider, result, qualificationAtSigningTime, getWarnLevelConstraint());
 	}
 
 }

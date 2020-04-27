@@ -21,7 +21,6 @@
 package eu.europa.esig.dss.ws.validation.common;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.security.cert.X509Certificate;
 import java.util.Date;
@@ -45,10 +44,11 @@ import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.model.ToBeSigned;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
+import eu.europa.esig.dss.policy.ValidationPolicy;
+import eu.europa.esig.dss.policy.ValidationPolicyFacade;
 import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.validation.AdvancedSignature;
 import eu.europa.esig.dss.validation.CertificateVerifier;
-import eu.europa.esig.dss.validation.DocumentValidator;
 import eu.europa.esig.dss.validation.SignedDocumentValidator;
 import eu.europa.esig.dss.validation.reports.Reports;
 import eu.europa.esig.dss.ws.converter.RemoteDocumentConverter;
@@ -73,17 +73,13 @@ public class RemoteDocumentValidationService {
 
 	public WSReportsDTO validateDocument(RemoteDocument signedFile, List<RemoteDocument> originalFiles, RemoteDocument policy) {
 		LOG.info("ValidateDocument in process...");
-		DocumentValidator validator = initValidator(signedFile, originalFiles);
+		SignedDocumentValidator validator = initValidator(signedFile, originalFiles);
 
 		Reports reports = null;
 		if (policy == null) {
 			reports = validator.validateDocument();
 		} else {
-			try (ByteArrayInputStream bais = new ByteArrayInputStream(policy.getBytes())) {
-				reports = validator.validateDocument(bais);
-			} catch (IOException e) {
-				throw new DSSException(e);
-			}
+			reports = validator.validateDocument(getValidationPolicy(policy));
 		}
 		
 
@@ -93,9 +89,17 @@ public class RemoteDocumentValidationService {
 		return reportsDTO;
 	}
 
+	private ValidationPolicy getValidationPolicy(RemoteDocument policy) {
+		try (ByteArrayInputStream bais = new ByteArrayInputStream(policy.getBytes())) {
+			return ValidationPolicyFacade.newFacade().getValidationPolicy(bais);
+		} catch (Exception e) {
+			throw new DSSException("Unable to load the validation policy", e);
+		}
+	}
+
 	public List<RemoteDocument> getOriginalDocuments(RemoteDocument signedFile, List<RemoteDocument> originalFiles, String signatureId) {
 		LOG.info("GetOriginalDocuments in process...");
-		DocumentValidator validator = initValidator(signedFile, originalFiles);
+		SignedDocumentValidator validator = initValidator(signedFile, originalFiles);
 
 		if (signatureId == null) {
 			List<AdvancedSignature> signatures = validator.getSignatures();
@@ -111,7 +115,7 @@ public class RemoteDocumentValidationService {
 		return remoteDocuments;
 	}
 
-	private DocumentValidator initValidator(RemoteDocument signedFile, List<RemoteDocument> originalFiles) {
+	private SignedDocumentValidator initValidator(RemoteDocument signedFile, List<RemoteDocument> originalFiles) {
 		DSSDocument signedDocument = RemoteDocumentConverter.toDSSDocument(signedFile);
 		SignedDocumentValidator signedDocValidator = SignedDocumentValidator.fromDocument(signedDocument);
 		signedDocValidator.setCertificateVerifier(verifier);

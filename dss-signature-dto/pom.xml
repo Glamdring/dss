@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>eu.europa.ec.joinup.sd-dss</groupId>
 		<artifactId>sd-dss</artifactId>
-		<version>5.5.1-SNAPSHOT</version>
+		<version>5.6</version>
 	</parent>
 
 	<artifactId>dss-signature-dto</artifactId>
@@ -19,9 +19,5 @@
 			<groupId>eu.europa.ec.joinup.sd-dss</groupId>
 			<artifactId>dss-common-remote-dto</artifactId>
 		</dependency>
-		<dependency>
-            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
-            <artifactId>dss-model</artifactId>
-        </dependency>
 	</dependencies>
 </project>

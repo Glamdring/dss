@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.model.pades.SignatureImageParameters;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.utils.Utils;
@@ -52,12 +53,19 @@ public abstract class AbstractPdfBoxSignatureDrawer implements PdfBoxSignatureDr
 	
 	@Override
 	public void init(SignatureImageParameters parameters, PDDocument document, SignatureOptions signatureOptions, CertificateToken signingCertificate, Date signingDate) throws IOException {
+		assertSignatureParamatersAreValid(parameters);
 		this.parameters = parameters;
 		this.document = document;
 		this.signatureOptions = signatureOptions;
 		this.signingCertificate = signingCertificate;
 		this.signingDate = signingDate;
 		checkColorSpace(document, parameters.getImage());
+	}
+	
+	private void assertSignatureParamatersAreValid(SignatureImageParameters parameters) {
+		if (parameters == null || parameters.getImage() == null && parameters.getTextParameters() == null) {
+			throw new DSSException("Neither image nor text parameters are defined!");
+		}
 	}
 	
 	/**
