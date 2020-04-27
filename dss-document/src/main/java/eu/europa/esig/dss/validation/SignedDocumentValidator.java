@@ -496,16 +496,7 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		// not implemented by default see ASiC Container Validator
 		return null;
 	}
-
-	protected Reports processValidationPolicy(XmlDiagnosticData diagnosticData, ValidationPolicy validationPolicy) {
-		final SignatureProcessExecutor executor = provideProcessExecutorInstance();
-		executor.setValidationPolicy(validationPolicy);
-		executor.setValidationLevel(validationLevel);
-		executor.setDiagnosticData(diagnosticData);
-		executor.setEnableEtsiValidationReport(enableEtsiValidationReport);
-		final Reports reports = executor.execute();
-		reports.setValidationPolicy(validationPolicy);
-		return reports;
+	
 	/**
 	 * Prepares the {@code validationContext} for a timestamp validation process
 	 * 
@@ -624,9 +615,11 @@ public abstract class SignedDocumentValidator implements DocumentValidator {
 		executor.setEnableEtsiValidationReport(enableEtsiValidationReport);
 		executor.setLocale(locale);
 		executor.setCurrentTime(getValidationTime());
-		return executor.execute();
+		final Reports reports = executor.execute();
+	    reports.setValidationPolicy(validationPolicy);
+	    return reports;
 	}
-
+	
 	protected List<AdvancedSignature> getAllSignatures() {
 
 		setSignedScopeFinderDefaultDigestAlgorithm(certificateVerifier.getDefaultDigestAlgorithm());

@@ -23,6 +23,7 @@ package eu.europa.esig.dss.pades;
 import java.util.Date;
 
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.model.pades.SignatureImageParameters;
 
 /**
  * Defines a list of common PAdES parameters between signature and timestamps

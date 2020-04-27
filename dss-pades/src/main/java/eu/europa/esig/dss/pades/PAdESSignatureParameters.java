@@ -83,6 +83,23 @@ public class PAdESSignatureParameters extends CAdESSignatureParameters implement
 	 * future change(s).
 	 */
 	private CertificationPermission permission;
+	
+	
+	/**
+	 * This attribute allows to override the used Filter for a Timestamp.
+	 * 
+	 * Default value is Adobe.PPKLite
+	 */
+	private String timestampFilter = PAdESConstants.TIMESTAMP_DEFAULT_FILTER;
+
+	/**
+	 * This attribute allows to override the used subFilter for a Timestamp.
+	 * 
+	 * Default value is ETSI.RFC3161
+	 */
+	private String timestampSubFilter = PAdESConstants.TIMESTAMP_DEFAULT_SUBFILTER;
+
+	private SignatureImageParameters timestampImageParameters;
 
 	@Override
 	public void setSignatureLevel(SignatureLevel signatureLevel) {
@@ -266,6 +283,14 @@ public class PAdESSignatureParameters extends CAdESSignatureParameters implement
 		} else {
 			this.archiveTimestampParameters = new PAdESTimestampParameters(archiveTimestampParameters);
 		}
+	}
+
+	public SignatureImageParameters getTimestampImageParameters() {
+		return timestampImageParameters;
+	}
+
+	public void setTimestampImageParameters(SignatureImageParameters timestampImageParameters) {
+		this.timestampImageParameters = timestampImageParameters;
 	}
 
 }

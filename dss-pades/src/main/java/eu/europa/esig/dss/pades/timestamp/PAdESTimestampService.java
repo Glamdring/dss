@@ -41,10 +41,10 @@ public class PAdESTimestampService {
 	
 	public DSSDocument timestampDocument(final DSSDocument document, final PAdESTimestampParameters params) throws DSSException {
 		final DigestAlgorithm timestampDigestAlgorithm = params.getDigestAlgorithm();
-		final byte[] digest = pdfSignatureService.digest(document, params);
+		final byte[] digest = pdfSignatureService.digest(document, params, timestampDigestAlgorithm, true);
 		final TimestampBinary timeStampToken = tspSource.getTimeStampResponse(timestampDigestAlgorithm, digest);
 		final byte[] encoded = DSSASN1Utils.getDEREncoded(timeStampToken);
-		return pdfSignatureService.sign(document, encoded, params);
+		return pdfSignatureService.sign(document, encoded, params, timestampDigestAlgorithm, false);
 	}
 
 }

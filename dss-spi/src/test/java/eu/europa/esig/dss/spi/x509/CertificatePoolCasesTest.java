@@ -119,9 +119,9 @@ public class CertificatePoolCasesTest {
 		assertEquals(2, certPool.getBySki(DSSASN1Utils.computeSkiFromCert(c1)).size());
 	}
 
-	@Test(timeout = 15000)
+	@Test
 	public void extractTLSKeystore() throws IOException {
-		assertTimeout(ofMillis(3000), () -> {
+		assertTimeout(ofMillis(15000), () -> {
 			KeyStoreCertificateSource kscs = new KeyStoreCertificateSource(new File("src/test/resources/extract-tls.p12"),
 					"PKCS12", "ks-password");
 	

@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,7 @@ import java.util.Map.Entry;
 
 import org.bouncycastle.cert.ocsp.BasicOCSPResp;
 import org.bouncycastle.cert.ocsp.OCSPResp;
+import org.bouncycastle.tsp.TimeStampToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,12 +45,15 @@ import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.model.x509.Token;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.pdf.visible.SignatureDrawerFactory;
+import eu.europa.esig.dss.spi.DSSASN1Utils;
 import eu.europa.esig.dss.spi.DSSRevocationUtils;
 import eu.europa.esig.dss.spi.DSSUtils;
 import eu.europa.esig.dss.spi.x509.CertificatePool;
+import eu.europa.esig.dss.spi.x509.tsp.TSPSource;
 import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.validation.PdfRevision;
 import eu.europa.esig.dss.validation.PdfSignatureDictionary;
+import eu.europa.esig.dss.model.TimestampBinary;
 
 public abstract class AbstractPDFSignatureService implements PDFSignatureService {
 
@@ -99,17 +104,17 @@ public abstract class AbstractPDFSignatureService implements PDFSignatureService
 		}
 	}
 
-	protected SignatureImageParameters getImageParameters(PAdESSignatureParameters parameters) {
+	protected SignatureImageParameters getImageParameters(PAdESSignatureParameters parameters, boolean timestamp) {
 		if (timestamp) {
 			return parameters.getTimestampImageParameters();
 		} else {
-			return parameters.getSignatureImageParameters();
+			return parameters.getImageParameters();
 		}
 	}
 
 	protected String getSignatureName(PAdESSignatureParameters parameters) {
-		if (parameters.getSignatureName() != null) {
-			return parameters.getSignatureName();
+		if (parameters.getSignerName() != null) {
+			return parameters.getSignerName();
 		} else {
 
 			CertificateToken token = parameters.getSigningCertificate();
@@ -124,12 +129,11 @@ public abstract class AbstractPDFSignatureService implements PDFSignatureService
 		}
 	}
 
-	@Override
 	public DSSDocument timestamp(DSSDocument document, PAdESSignatureParameters parameters, TSPSource tspSource) {
 		final DigestAlgorithm timestampDigestAlgorithm = parameters.getSignatureTimestampParameters().getDigestAlgorithm();
 		final byte[] digest = digest(document, parameters, timestampDigestAlgorithm, true);
-		final TimeStampToken timeStampToken = tspSource.getTimeStampResponse(timestampDigestAlgorithm, digest);
-		final byte[] encoded = DSSASN1Utils.getDEREncoded(timeStampToken);
+		final TimestampBinary timeStampToken = tspSource.getTimeStampResponse(timestampDigestAlgorithm, digest);
+		final byte[] encoded = timeStampToken.getBytes();
 		return sign(document, encoded, parameters, timestampDigestAlgorithm, true);
 	}
 

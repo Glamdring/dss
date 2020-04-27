@@ -24,6 +24,7 @@ import java.util.Date;
 
 import eu.europa.esig.dss.cades.signature.CAdESTimestampParameters;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.model.pades.SignatureImageParameters;
 import eu.europa.esig.dss.pdf.PAdESConstants;
 
 @SuppressWarnings("serial")
