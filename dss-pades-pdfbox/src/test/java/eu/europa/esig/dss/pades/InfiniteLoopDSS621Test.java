@@ -87,7 +87,7 @@ public class InfiniteLoopDSS621Test {
 
 	@Test
 	public void testReadTimestamp1() throws Exception {
-        assertTimeout(ofMillis(5000), () -> {
+        assertTimeout(ofMillis(10000), () -> {
         	DSSDocument signDocument = new InMemoryDocument(getClass().getResourceAsStream(FILE_PATH));
     		final CommonCertificateVerifier certificateVerifier = new CommonCertificateVerifier();
     		certificateVerifier.setDataLoader(new IgnoreDataLoader()); // Error 404 on DER policy

@@ -20,9 +20,6 @@
  */
 package eu.europa.esig.dss.pades.signature.visible;
 
-<<<<<<< HEAD
-public class PdfBoxPAdESVisibleSignatureTest extends PAdESVisibleSignatureSuite {
-=======
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.runner.RunWith;
@@ -42,6 +39,5 @@ import eu.europa.esig.dss.pades.signature.visible.suite.PAdESWithSignatureInvisi
 		PAdESWithSignatureInvisibleAndTimestampVisibleTest.class, PAdESVisibleSignatureWithJavaFontTest.class, PAdESNonLatinCharactersSignatureTest.class,
 		PAdESVisibleZoomRotationTest.class, PAdESVisibleSignWithSignatureFieldTest.class })
 public class PdfBoxPAdESVisibleSignatureTest {
->>>>>>> 576a3d0c23f3526bdb697fa3ccdc4e7b4dd157bd
 
 }

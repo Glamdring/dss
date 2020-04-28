@@ -21,10 +21,14 @@
 package eu.europa.esig.dss.pades;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Collections;
 
 import eu.europa.esig.dss.cades.signature.CAdESTimestampParameters;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.model.BLevelParameters;
 import eu.europa.esig.dss.model.pades.SignatureImageParameters;
+import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pdf.PAdESConstants;
 
 @SuppressWarnings("serial")
@@ -130,4 +134,19 @@ public class PAdESTimestampParameters extends CAdESTimestampParameters implement
 		this.timestampFieldId = timestampFieldId;
 	}
 
+	@Override
+	public List<SignatureImageParameters> getStampImageParameters() {
+		return Collections.singletonList(timestampImageParameters);
+	}
+
+
+	@Override
+	public BLevelParameters bLevel() {
+		return null;
+	}
+
+	@Override
+	public CertificateToken getSigningCertificate() {
+		return null;
+	}
 }

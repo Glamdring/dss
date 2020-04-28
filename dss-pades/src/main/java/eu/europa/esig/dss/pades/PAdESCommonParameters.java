@@ -21,9 +21,12 @@
 package eu.europa.esig.dss.pades;
 
 import java.util.Date;
+import java.util.List;
 
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.model.BLevelParameters;
 import eu.europa.esig.dss.model.pades.SignatureImageParameters;
+import eu.europa.esig.dss.model.x509.CertificateToken;
 
 /**
  * Defines a list of common PAdES parameters between signature and timestamps
@@ -62,6 +65,12 @@ public interface PAdESCommonParameters {
 	SignatureImageParameters getImageParameters();
 	
 	/**
+	 * Returns {@link SignatureImageParameters} for field's visual representation of stamps
+	 * @return {@link SignatureImageParameters}
+	 */
+	List<SignatureImageParameters> getStampImageParameters();
+	
+	/**
 	 * Returns a length of the reserved /Contents attribute
 	 * @return int content size
 	 */
@@ -72,5 +81,8 @@ public interface PAdESCommonParameters {
 	 * @return {@link DigestAlgorithm}
 	 */
 	DigestAlgorithm getDigestAlgorithm();
-
+	
+	BLevelParameters bLevel();
+	
+	CertificateToken getSigningCertificate();
 }

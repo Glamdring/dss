@@ -30,8 +30,6 @@ import eu.europa.esig.dss.model.pades.SignatureImageTextParameters.SignerTextHor
 import eu.europa.esig.dss.model.pades.SignatureImageTextParameters.SignerTextPosition;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.pades.signature.PAdESService;
-import eu.europa.esig.dss.pdf.PdfObjFactory;
-import eu.europa.esig.dss.pdf.pdfbox.PdfBoxDefaultObjectFactory;
 import eu.europa.esig.dss.test.signature.PKIFactoryAccess;
 
 public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
@@ -82,25 +80,24 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 	}
 
 	private DSSDocument signDocumentWithStamps(DSSDocument document, DSSDocument image, int x) {
-	    PdfObjFactory.setInstance(new PdfBoxDefaultObjectFactory());
 		PAdESSignatureParameters params = new PAdESSignatureParameters();
-		params.setSignatureSubFilter("adbe.pkcs7.detached");
+		params.setSubFilter("adbe.pkcs7.detached");
 
-		params.setSignatureImageParameters(new SignatureImageParameters());
-		params.getSignatureImageParameters().setImage(image);
-		params.getSignatureImageParameters().setTextParameters(new SignatureImageTextParameters());
-		params.getSignatureImageParameters().getTextParameters().setText("%CN_1%\n%CN_2%");
-		params.getSignatureImageParameters().getTextParameters().setPadding(30);
-		params.getSignatureImageParameters().getTextParameters().setSignerTextHorizontalAlignment(SignerTextHorizontalAlignment.RIGHT);
-		params.getSignatureImageParameters().getTextParameters().setSignerTextPosition(SignerTextPosition.FOREGROUND);
-		params.getSignatureImageParameters().setTextRightParameters(new SignatureImageTextParameters());
-		params.getSignatureImageParameters().getTextRightParameters().setText("Signature created by\nTest\nDate: %DateTimeWithTimeZone%");
-		params.getSignatureImageParameters().setPageRange(new SignatureImagePageRange());
-		params.getSignatureImageParameters().setxAxis(x);
-		params.getSignatureImageParameters().setyAxis(-55);
-		params.getSignatureImageParameters().setWidth(200);
-		params.getSignatureImageParameters().setPagePlacement(VisualSignaturePagePlacement.SINGLE_PAGE);
-		params.getSignatureImageParameters().setPage(-1);
+		params.setImageParameters(new SignatureImageParameters());
+		params.getImageParameters().setImage(image);
+		params.getImageParameters().setTextParameters(new SignatureImageTextParameters());
+		params.getImageParameters().getTextParameters().setText("%CN_1%\n%CN_2%");
+		params.getImageParameters().getTextParameters().setPadding(30);
+		params.getImageParameters().getTextParameters().setSignerTextHorizontalAlignment(SignerTextHorizontalAlignment.RIGHT);
+		params.getImageParameters().getTextParameters().setSignerTextPosition(SignerTextPosition.FOREGROUND);
+		params.getImageParameters().setTextRightParameters(new SignatureImageTextParameters());
+		params.getImageParameters().getTextRightParameters().setText("Signature created by\nTest\nDate: %DateTimeWithTimeZone%");
+		params.getImageParameters().setPageRange(new SignatureImagePageRange());
+		params.getImageParameters().setxAxis(x);
+		params.getImageParameters().setyAxis(-55);
+		params.getImageParameters().setWidth(200);
+		params.getImageParameters().setPagePlacement(VisualSignaturePagePlacement.SINGLE_PAGE);
+		params.getImageParameters().setPage(-1);
 		
 		SignatureImageParameters stampParams = new SignatureImageParameters();
 		stampParams.setImage(image);
@@ -125,7 +122,7 @@ public class PAdESVisibleSignatureAndStampTest extends PKIFactoryAccess {
 		params.bLevel().setSigningDate(new Date());
 		params.setSigningCertificate(getSigningCert());
 		params.setCertificateChain(getCertificateChain());
-		params.setSignatureLevel(SignatureLevel.PAdES_BASELINE_LTA);
+		params.setSignatureLevel(SignatureLevel.PAdES_BASELINE_LT);
 		params.setSignaturePackaging(SignaturePackaging.ENVELOPING);
 		params.setDigestAlgorithm(DigestAlgorithm.SHA512);
 

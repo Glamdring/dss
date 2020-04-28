@@ -32,6 +32,7 @@ import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.pades.DSSFileFont;
+import eu.europa.esig.dss.model.pades.DSSJavaFont;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.pades.PAdESTimestampParameters;
 import eu.europa.esig.dss.pades.SignatureFieldParameters;
@@ -74,7 +75,7 @@ public class PAdESNonLatinCharactersSignatureTest extends AbstractPAdESTestSigna
 		SignatureImageParameters signatureImageParameters = new SignatureImageParameters();
 		SignatureImageTextParameters textParameters = new SignatureImageTextParameters();
 		textParameters.setText("Моя подпись 1");
-		textParameters.setFont(new DSSFileFont(getClass().getResourceAsStream("/fonts/OpenSansBold.ttf")));
+		textParameters.setFont(new DSSJavaFont(new DSSFileFont(getClass().getResourceAsStream("/fonts/OpenSansBold.ttf")).getJavaFont()));
 		signatureImageParameters.setTextParameters(textParameters);
 		signatureParameters.setImageParameters(signatureImageParameters);
 

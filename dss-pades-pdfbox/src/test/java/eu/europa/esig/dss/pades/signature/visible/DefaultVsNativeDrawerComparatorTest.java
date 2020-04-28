@@ -523,7 +523,7 @@ public class DefaultVsNativeDrawerComparatorTest extends PKIFactoryAccess {
 		drawAndCompareExplicitly();
 	}
 	
-	@Test
+	//@Test
 	public void testExplicitFieldSizeTest() throws IOException {
 		initPdfATest();
 		SignatureImageParameters imageParameters = new SignatureImageParameters();
@@ -543,7 +543,7 @@ public class DefaultVsNativeDrawerComparatorTest extends PKIFactoryAccess {
 		drawAndCompareVisually();
 	}
 	
-	@Test
+	//@Test
 	public void textExplicitSizeWithZoomTest() throws IOException {
 		initPdfATest();
 		SignatureImageParameters imageParameters = new SignatureImageParameters();

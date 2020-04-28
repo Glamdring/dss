@@ -44,7 +44,7 @@ public class PAdESTimestampService {
 		final byte[] digest = pdfSignatureService.digest(document, params, timestampDigestAlgorithm, true);
 		final TimestampBinary timeStampToken = tspSource.getTimeStampResponse(timestampDigestAlgorithm, digest);
 		final byte[] encoded = DSSASN1Utils.getDEREncoded(timeStampToken);
-		return pdfSignatureService.sign(document, encoded, params, timestampDigestAlgorithm, false);
+		return pdfSignatureService.sign(document, encoded, params, timestampDigestAlgorithm, true);
 	}
 
 }

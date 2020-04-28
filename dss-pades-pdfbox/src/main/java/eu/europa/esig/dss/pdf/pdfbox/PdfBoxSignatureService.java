@@ -77,6 +77,7 @@ import org.apache.pdfbox.pdmodel.interactive.form.PDSignatureField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.model.InMemoryDocument;
@@ -139,7 +140,7 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
 		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 				InputStream is = toSignDocument.openStream();
 				PDDocument pdDocument = loadDocument(parameters, timestamping, is)) {
-			final byte[] digest = signDocumentAndReturnDigest(parameters, signatureValue, outputStream, pdDocument);
+			final byte[] digest = signDocumentAndReturnDigest(parameters, signatureValue, outputStream, pdDocument, digestAlgorithm);
 			if (LOG.isDebugEnabled()) {
 				LOG.debug("Base64 messageDigest : {}", Utils.toBase64(digest));
 			}
@@ -149,7 +150,7 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
 		}
 	}
 	
-	private PDDocument loadDocument(final PAdESSignatureParameters parameters, boolean timestamping, InputStream in) throws IOException {
+	private PDDocument loadDocument(final PAdESCommonParameters parameters, boolean timestamping, InputStream in) throws IOException {
 	    if (!timestamping) {
             return loadAndStampDocument(in, parameters);
         } else {
@@ -157,7 +158,7 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
         }
 	}
 
-	private PDDocument loadAndStampDocument(InputStream pdfData, PAdESSignatureParameters parameters)
+	private PDDocument loadAndStampDocument(InputStream pdfData, PAdESCommonParameters parameters)
             throws IOException {
         byte[] pdfBytes = IOUtils.toByteArray(pdfData);
         PDDocument pdDocument = PDDocument.load(pdfBytes);
@@ -174,7 +175,6 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
             pdDocument.getDocumentCatalog().setDocumentOutline(null);
             List<PDAnnotation> annotations = addStamps(pdDocument, parameters);
 
-            setDocumentId(parameters, pdDocument);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             try (COSWriter writer = new COSWriter(baos, new RandomAccessBuffer(pdfBytes))) {
                 // force-add the annotations (wouldn't be saved in incremental updates otherwise)
@@ -208,7 +208,7 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
         return annotations;
     }
 	
-	private List<PDAnnotation> addStamps(PDDocument pdDocument, PAdESSignatureParameters signatureParameters)
+	private List<PDAnnotation> addStamps(PDDocument pdDocument, PAdESCommonParameters signatureParameters)
             throws FileNotFoundException, IOException {
         int totalPages = pdDocument.getNumberOfPages();
         List<PDAnnotation> result = new ArrayList<>();
@@ -283,7 +283,7 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
 
     protected void fillImageParameters(final PDDocument doc, final PAdESSignatureParameters signatureParameters,
             SignatureOptions options) throws IOException {
-        SignatureImageParameters signatureImageParameters = signatureParameters.getSignatureImageParameters();
+        SignatureImageParameters signatureImageParameters = signatureParameters.getImageParameters();
         fillImageParameters(doc, signatureImageParameters, options, signatureParameters.getSigningCertificate(),
                 signatureParameters.bLevel().getSigningDate());
     }
@@ -333,17 +333,6 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
         }
     }
         
-	private void setDocumentId(PAdESSignatureParameters parameters, PDDocument pdDocument) {
-        // the document needs to have an ID, if not a ID based on the current system
-        // time is used, and then the digest of the signed data is different
-        if (pdDocument.getDocumentId() == null) {
-
-            final byte[] documentIdBytes = DSSUtils.digest(DigestAlgorithm.SHA256,
-                    parameters.bLevel().getSigningDate().toString().getBytes());
-            pdDocument.setDocumentId(DSSUtils.toLong(documentIdBytes));
-        }
-    }
-
     private PDAnnotationPopup addPopup(PDDocument pdDocument, int page, PDRectangle rect,
             PDAnnotationRubberStamp stamp) throws IOException {
         PDAnnotationPopup popup = new PDAnnotationPopup();
@@ -406,14 +395,14 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
     }
 	
 	@Override
-	public DSSDocument sign(final DSSDocument toSignDocument, final byte[] signatureValue, final PAdESSignatureParameters parameters,
+	public DSSDocument sign(final DSSDocument toSignDocument, final byte[] signatureValue, final PAdESCommonParameters parameters,
 			final DigestAlgorithm digestAlgorithm, boolean timestamping) {
 
 		try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				InputStream is = toSignDocument.openStream();
 				PDDocument pdDocument = loadDocument(parameters, timestamping, is)) {
 
-			signDocumentAndReturnDigest(parameters, signatureValue, baos, pdDocument);
+			signDocumentAndReturnDigest(parameters, signatureValue, baos, pdDocument, digestAlgorithm);
 
 			DSSDocument signature = new InMemoryDocument(baos.toByteArray());
 			signature.setMimeType(MimeType.PDF);
@@ -424,10 +413,13 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
 	}
 
 	private void adjustCoordinateParameters(final PAdESCommonParameters parameters, PDPage currentPage) {
-	    float x = ImageUtils.convertNegativeAxisValue(parameters.getSignatureImageParameters().getxAxis(), currentPage.getCropBox().getWidth());
-        float y = ImageUtils.convertNegativeAxisValue(parameters.getSignatureImageParameters().getyAxis(), currentPage.getCropBox().getHeight());
-        parameters.getSignatureImageParameters().setxAxis(x);
-        parameters.getSignatureImageParameters().setyAxis(y);
+	    if (parameters.getImageParameters() == null) {
+	        return;
+	    }
+	    float x = ImageUtils.convertNegativeAxisValue(parameters.getImageParameters().getxAxis(), currentPage.getCropBox().getWidth());
+        float y = ImageUtils.convertNegativeAxisValue(parameters.getImageParameters().getyAxis(), currentPage.getCropBox().getHeight());
+        parameters.getImageParameters().setxAxis(x);
+        parameters.getImageParameters().setyAxis(y);
         for (SignatureImageParameters params : parameters.getStampImageParameters()) {
             float stampX = ImageUtils.convertNegativeAxisValue(params.getxAxis(), currentPage.getCropBox().getWidth());
             float stampY = ImageUtils.convertNegativeAxisValue(params.getyAxis(), currentPage.getCropBox().getHeight());
@@ -464,7 +456,7 @@ public class PdfBoxSignatureService extends AbstractPDFSignatureService {
 				PdfBoxSignatureDrawer signatureDrawer = (PdfBoxSignatureDrawer) signatureDrawerFactory
 						.getSignatureDrawer(imageParameters);
 				signatureDrawer.init(imageParameters, pdDocument, options, parameters.getSigningCertificate(), 
-				        parameters.bLevel().getSigningDate());
+				        parameters.bLevel() != null ? parameters.bLevel().getSigningDate() : null);
 				signatureDrawer.draw();
 			}
 			
