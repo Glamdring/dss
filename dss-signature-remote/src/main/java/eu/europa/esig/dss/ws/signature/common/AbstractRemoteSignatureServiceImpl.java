@@ -22,6 +22,8 @@ package eu.europa.esig.dss.ws.signature.common;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
@@ -30,13 +32,12 @@ import javax.naming.ldap.Rdn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.logsentinel.ApiCallbackAdapter;
 import com.logsentinel.ApiException;
 import com.logsentinel.LogSentinelClient;
-import com.logsentinel.client.model.ActionData;
-import com.logsentinel.client.model.ActorData;
-import com.logsentinel.client.model.AuditLogEntryType;
-import com.logsentinel.client.model.LogResponse;
+import com.logsentinel.model.ActionData;
+import com.logsentinel.model.ActionData.EntryTypeEnum;
+import com.logsentinel.model.ActorData;
+import com.logsentinel.model.LogResponse;
 
 import eu.europa.esig.dss.AbstractSignatureParameters;
 import eu.europa.esig.dss.asic.cades.ASiCWithCAdESSignatureParameters;
@@ -76,6 +77,8 @@ public abstract class AbstractRemoteSignatureServiceImpl {
     
     private LogSentinelClient logSentinelClient;
     private boolean logsentinelIncludeNames;
+    
+    private ExecutorService executor = Executors.newCachedThreadPool();
     
 	protected SerializableSignatureParameters getASiCSignatureParameters(ASiCContainerType asicContainerType,
 			SignatureForm signatureForm) {
@@ -159,9 +162,9 @@ public abstract class AbstractRemoteSignatureServiceImpl {
 			parameters.setCertificateChain(RemoteCertificateConverter.toCertificateTokens(remoteCertificateChain));
 		}
 		
-		if (parameters instanceof PAdESSignatureParameters) {
-		    ((PAdESSignatureParameters) parameters).setSignatureImageParameters(remoteParameters.getSignatureImageParameters());
-		    ((PAdESSignatureParameters) parameters).setStampImageParameters(remoteParameters.getStampImageParameters());
+		if (((AbstractSignatureParameters) parameters) instanceof PAdESSignatureParameters) {
+		    ((PAdESSignatureParameters) ((AbstractSignatureParameters) parameters)).setImageParameters(remoteParameters.getSignatureImageParameters());
+		    ((PAdESSignatureParameters) ((AbstractSignatureParameters) parameters)).setStampImageParameters(remoteParameters.getStampImageParameters());
 		}
 	}
 	
@@ -285,7 +288,7 @@ public abstract class AbstractRemoteSignatureServiceImpl {
             throw new DSSException(ex);
         }
 
-        ActorData actor = new ActorData(loadCertificate.getCertificate().getSerialNumber().toString());
+        ActorData actor = new ActorData().actorId(loadCertificate.getCertificate().getSerialNumber().toString());
 
         if (logsentinelIncludeNames) {
             String signerNames = ldapName.getRdns().stream().filter(rdn -> rdn.getType().equals("CN"))
@@ -293,23 +296,20 @@ public abstract class AbstractRemoteSignatureServiceImpl {
             actor.setActorDisplayName(signerNames);
         }
 
-        ActionData<String> action = new ActionData<>(document.getDigest(params.getDigestAlgorithm()));
+        ActionData<String> action = new ActionData<String>().action(document.getDigest(params.getDigestAlgorithm()));
         action.setAction("SIGN");
         action.setEntityType("DOCUMENT");
         if (document.getName() != null) {
             action.setEntityId(document.getName().replaceAll(".pdf", ""));
         }
-        action.setEntryType(AuditLogEntryType.BUSINESS_LOGIC_ENTRY);
+        action.setEntryType(EntryTypeEnum.BUSINESS_LOGIC_ENTRY);
 
-        try {
-            logSentinelClient.getAuditLogActions().logAsync(actor, action, new ApiCallbackAdapter<LogResponse>() {
-                @Override
-                public void onFailure(ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
-                    LOG.error("Failed to log request", e);
-                }
-            });
-        } catch (ApiException e) {
-            LOG.error("Failed to log request", e);
-        }
+        executor.submit(() -> {
+            try {
+                logSentinelClient.getAuditLogActions().log(actor, action);
+            } catch (ApiException e) {
+                LOG.error("Failed to log request", e);
+            }
+        });
     }
 }
