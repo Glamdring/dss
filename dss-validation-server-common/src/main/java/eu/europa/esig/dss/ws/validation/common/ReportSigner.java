@@ -152,7 +152,7 @@ public class ReportSigner {
         SignatureImageParameters signatureParams = createImageParams();
         signatureParams.setPagePlacement(VisualSignaturePagePlacement.SINGLE_PAGE);
         signatureParams.setPage(-1);
-        params.setSignatureImageParameters(signatureParams);
+        params.setImageParameters(signatureParams);
         
         DSSDocument document = new InMemoryDocument(byteArray);
         if (amqpConnection != null) {
