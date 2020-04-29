@@ -20,10 +20,10 @@
  */
 package eu.europa.esig.dss.pdf.openpdf.visible;
 
+import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.model.pades.SignatureImageParameters;
 import eu.europa.esig.dss.model.pades.SignatureImageTextParameters;
-import eu.europa.esig.dss.model.DSSDocument;
 
 public class ITextDefaultSignatureDrawerFactory implements ITextSignatureDrawerFactory {
 
@@ -36,10 +36,12 @@ public class ITextDefaultSignatureDrawerFactory implements ITextSignatureDrawerF
 			return new TextOnlySignatureDrawer();
 		} else if ((image != null) && (textParameters == null)) {
 			return new ImageOnlySignatureDrawer();
+		} else if (image == null && textParameters == null) {
+			throw new DSSException("Neither image nor text parameters are defined!");
 		} else {
 			// Custom drawer(s) can be injected with a new Factory and a custom instance of
 			// IPdfObjFactory
-			throw new DSSException("Not implemented");
+			throw new DSSException("Common Image and Text signature drawer is not implemented for OpenPDF module!");
 		}
 	}
 
