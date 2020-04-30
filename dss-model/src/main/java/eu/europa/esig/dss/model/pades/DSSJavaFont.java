@@ -23,11 +23,14 @@ package eu.europa.esig.dss.model.pades;
 import java.awt.Font;
 import java.io.InputStream;
 
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.europa.esig.dss.model.DSSException;
 
+@XmlJavaTypeAdapter(DSSJavaFontAdapter.class)
 public class DSSJavaFont extends AbstractDSSFont {
 
 	private static final Logger LOG = LoggerFactory.getLogger(DSSJavaFont.class);
@@ -75,5 +78,28 @@ public class DSSJavaFont extends AbstractDSSFont {
 				+ "Please, use DSSFileFont implementation to get the document compatible with the PDF/A standard.");
 		return true;
 	}
-
+	
+	public static class XMLFont {
+        private String name;
+        private int size;
+        private String type;
+        public String getName() {
+            return name;
+        }
+        public void setName(String name) {
+            this.name = name;
+        }
+        public int getSize() {
+            return size;
+        }
+        public void setSize(int size) {
+            this.size = size;
+        }
+        public String getType() {
+            return type;
+        }
+        public void setType(String type) {
+            this.type = type;
+        }
+    }
 }
