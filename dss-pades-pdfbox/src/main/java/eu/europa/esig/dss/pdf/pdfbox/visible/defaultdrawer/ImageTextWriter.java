@@ -63,8 +63,9 @@ public final class ImageTextWriter {
             dssFont = textParameters.getFont();
         }
 		Font properFont = FontUtils.computeProperFont(dssFont.getJavaFont(), dssFont.getSize(), CommonDrawerUtils.getDpi(imageParameters.getDpi()));
-		Dimension dimension = FontUtils.computeSize(properFont, textParameters.getText(), textParameters.getPadding());
-		return createTextImage(text != null ? text : textParameters.getText(), textParameters, properFont, dimension, imageParameters);
+		text = text != null ? text : textParameters.getText();
+		Dimension dimension = FontUtils.computeSize(properFont, text, textParameters.getPadding());
+		return createTextImage(text, textParameters, properFont, dimension, imageParameters);
 	}
 	
 	/**
