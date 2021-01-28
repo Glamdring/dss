@@ -134,7 +134,7 @@ public class ReportSigner {
     
     public void signReport(byte[] byteArray, OutputStream outputStream, String sessionId) throws IOException {
         PAdESSignatureParameters params = new PAdESSignatureParameters();
-        params.bLevel().setTrustAnchorBPPolicy(true);
+        params.bLevel().setTrustAnchorBPPolicy(false); // if set to true, signatures by trusted-list providers fail
         params.bLevel().setSigningDate(new Date());
         params.setDigestAlgorithm(DigestAlgorithm.SHA256);
         params.setSignWithExpiredCertificate(false);
