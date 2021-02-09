@@ -106,6 +106,7 @@ public class ReportSigner {
             return;
         }
         XAdESSignatureParameters params = new XAdESSignatureParameters();
+        params.bLevel().setTrustAnchorBPPolicy(false); // if set to true, signatures by trusted-list providers fail
         params.setDigestAlgorithm(DigestAlgorithm.SHA256);
         params.setSignatureLevel(SignatureLevel.XAdES_BASELINE_LT);
         params.setSignaturePackaging(SignaturePackaging.ENVELOPED);
